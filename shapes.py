@@ -89,6 +89,7 @@ def get_shape(shape_choice_int, shape_size):
             x1, y1 = get_ellipse_center(shape_size)
         else:
             raise ValueError('Invalid shape_choice_str value')
+        shape_info['type'] = 'round'
         shape_info['x1'] = x1 + x_shift
         shape_info['y1'] = y1 + y_shift
     else:
@@ -105,6 +106,7 @@ def get_shape(shape_choice_int, shape_size):
 
         corners = np.dot(corners, R) + offset
         shape_info['corners'] = corners
+        shape_info['type'] = 'polygon'
 
     return shape_info
 
@@ -131,7 +133,6 @@ def round_corners(draw_img, shape_tuple, line_width):
 def draw_shapes(shape_info, draws, counter):
     shape_size = shape_info['shape_size']
     x_shift, y_shift = shape_info['offset']
-    shape_choice_str = shape_info['shape_choice_str']
     shape_choice_int = shape_info['shape_choice_int']
 
     draw_img = draws['draw_img']
@@ -140,7 +141,7 @@ def draw_shapes(shape_info, draws, counter):
 
     line_width = int(0.01 * shape_size)
 
-    if (shape_choice_str == "circle" or shape_choice_str == "ellipse"):
+    if (shape_info['type'] == 'round'):
         x0 = x_shift
         y0 = y_shift
         x1 = shape_info['x1']
