@@ -13,17 +13,18 @@ class ImageDataGenerator:
     def __init__(self, num_shape, image_size):
         self.num_shape = num_shape
         self.image_size = image_size
-    
+        self.shapes = None
+
     def init_shapes(self):
         shape_choices = [1, 2, 3]
         shape_types = np.random.choice(
             shape_choices, size=(self.num_shape), replace=True)
         self.shapes = get_shapes(shape_types, self.image_size)
-    
+
     def render_frame(self):
         image_info = get_image_from_shapes(self.shapes, self.image_size)
         return image_info
-    
+
     def get_image(self):
         self.init_shapes()
         image_info = self.render_frame()
@@ -35,6 +36,7 @@ class SequenceDataGenerator:
         self.num_shape = num_shape
         self.image_size = image_size
         self.sequence_len = sequence_len
+        self.shapes = None
 
     def init_shapes(self):
         shape_choices = [1, 2, 3]
