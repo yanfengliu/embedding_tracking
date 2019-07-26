@@ -3,10 +3,7 @@ import pickle
 
 import cv2
 import numpy as np
-from keras.utils import to_categorical
 from PIL import Image, ImageDraw
-from scipy.special import binom
-from skimage.transform import resize
 
 from utils import consecutive_integer, totuple
 

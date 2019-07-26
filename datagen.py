@@ -3,21 +3,38 @@ import pickle
 
 import cv2
 import numpy as np
-from keras.utils import to_categorical
-from PIL import Image, ImageDraw
-from scipy.special import binom
-from skimage.transform import resize
+from PIL import Image
 
-from shapes import get_shapes, get_image_from_shapes
+from shapes import get_image_from_shapes, get_shapes
 from utils import consecutive_integer, totuple
 
 
-class DataGenerator:
+class ImageDataGenerator:
+    def __init__(self, num_shape, image_size):
+        self.num_shape = num_shape
+        self.image_size = image_size
+    
+    def init_shapes(self):
+        shape_choices = [1, 2, 3]
+        shape_types = np.random.choice(
+            shape_choices, size=(self.num_shape), replace=True)
+        self.shapes = get_shapes(shape_types, self.image_size)
+    
+    def render_frame(self):
+        image_info = get_image_from_shapes(self.shapes, self.image_size)
+        return image_info
+    
+    def get_image(self):
+        self.init_shapes()
+        image_info = self.render_frame()
+        return image_info
+
+
+class SequenceDataGenerator:
     def __init__(self, num_shape, image_size, sequence_len):
         self.num_shape = num_shape
         self.image_size = image_size
         self.sequence_len = sequence_len
-        self.init_shapes()
 
     def init_shapes(self):
         shape_choices = [1, 2, 3]
@@ -75,4 +92,9 @@ class DataGenerator:
             self.bounce()
             image_info = self.render_frame()
             sequence.append(image_info)
+        return sequence
+
+    def get_sequence(self):
+        self.init_shapes()
+        sequence = self.render_sequence()
         return sequence
