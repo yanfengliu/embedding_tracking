@@ -1,4 +1,18 @@
 import numpy as np
+from skimage.transform import resize
+
+
+def resize_img(img, width, height):
+    img = resize(
+        img,
+        [width, height],
+        order=0,
+        cval=0,
+        mode='constant',
+        anti_aliasing=False,
+        preserve_range=True)
+    return img
+
 
 def consecutive_integer(mask):
     """
@@ -22,16 +36,19 @@ def consecutive_integer(mask):
     return mask, change_log
 
 
-def prep_for_model(image_info):
+def prep_for_model(image_info, params):
+    output_size = params.OUTPUT_SIZE
     x = image_info['image']
     x = x * 2 - 1
     x = np.expand_dims(x, axis = 0)
 
-    class_mask = image_info['class_mask']
-    class_mask = np.expand_dims(class_mask, axis = 0)
-    class_mask = np.expand_dims(class_mask, axis = -1)
+    class_mask    = image_info['class_mask']
+    class_mask    = resize_img(class_mask, output_size, output_size)
+    class_mask    = np.expand_dims(class_mask, axis = 0)
+    class_mask    = np.expand_dims(class_mask, axis = -1)
 
     instance_mask = image_info['instance_mask']
+    instance_mask = resize_img(instance_mask, output_size, output_size)
     instance_mask = np.expand_dims(instance_mask, axis = 0)
     instance_mask = np.expand_dims(instance_mask, axis = -1)
 

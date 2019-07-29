@@ -14,12 +14,12 @@ def single_eval(model, image_info, params):
     ETH_mean_shift_threshold = params.ETH_MEAN_SHIFT_THRESHOLD
     img_size                 = params.IMG_SIZE
 
-    image            = image_info['image']
-    class_mask_gt    = image_info['class_mask']
-    instance_mask_gt = image_info['instance_mask']
+    image = image_info['image']
 
-    # predictions
-    img, _ = prep_for_model(image_info)
+    img, masks = prep_for_model(image_info, params)
+    class_mask_gt    = masks[0, ..., 0]
+    instance_mask_gt = masks[0, ..., 1]
+
     x = model.predict(img)
 
     class_mask_pred = x[0, :, :, :class_num]
@@ -47,9 +47,8 @@ def single_eval(model, image_info, params):
         cluster_all_class += cluster
         previous_highest_label = np.max(cluster_all_class)
 
-    # pca on embedding for better visualization
+    # pca on embedding purely for visualization, not for clustering
     embedding_pred_flat = np.reshape(embedding_pred, (-1, embedding_dim))
-    num_pixels = embedding_pred_flat.shape[0]
     embedding_pred_flat = StandardScaler().fit_transform(embedding_pred_flat)
     pca = PCA(n_components=3)
     pc_flat = pca.fit_transform(embedding_pred_flat)
@@ -77,22 +76,26 @@ def single_eval(model, image_info, params):
     instance_mask_gt_color = np.zeros((img_size, img_size, 3))
     for i in np.unique(instance_mask_gt):
         instance_mask_gt_color[instance_mask_gt == i] = np.random.random((3))
-    instance_mask_gt_color_vertical = np.zeros((img_size*2, img_size, 3))
-    instance_mask_gt_color_vertical[:img_size, :, :] = instance_mask_gt_color[:, :img_size, :]
-    instance_mask_gt_color_vertical[img_size:, :, :] = instance_mask_gt_color[:, img_size:, :]
 
+    class_max = class_num - 1
     class_mask_int_pred_color = np.zeros((img_size, img_size, 3))
-    class_mask_int_pred_color[:, :, 0] = class_mask_int_pred/3
-    class_mask_int_pred_color[:, :, 1] = class_mask_int_pred/3
-    class_mask_int_pred_color[:, :, 2] = class_mask_int_pred/3
+    class_mask_int_pred_color[:, :, 0] = class_mask_int_pred/class_max
+    class_mask_int_pred_color[:, :, 1] = class_mask_int_pred/class_max
+    class_mask_int_pred_color[:, :, 2] = class_mask_int_pred/class_max
 
-    board = np.zeros((img_size, img_size*6, 3))
-    board[:, :(img_size), :] = image
-    board[:, (img_size):(img_size*2), :] = pc
-    board[:, (img_size*2):(img_size*3), :] = class_mask_int_pred_color
-    board[:, (img_size*3):(img_size*4), :] = embedding_masked
-    board[:, (img_size*4):(img_size*5), :] = all_instances
-    board[:, (img_size*5):(img_size*6), :] = instance_mask_gt_color
+    class_mask_int_gt_color = np.zeros((img_size, img_size, 3))
+    class_mask_int_gt_color[:, :, 0] = class_mask_gt/class_max
+    class_mask_int_gt_color[:, :, 1] = class_mask_gt/class_max
+    class_mask_int_gt_color[:, :, 2] = class_mask_gt/class_max
 
-    plt.figure(figsize=(4 * 6, 4))
+    board = np.zeros((img_size, img_size*7, 3))
+    board[:, (img_size*0):(img_size*1), :] = image
+    board[:, (img_size*1):(img_size*2), :] = pc
+    board[:, (img_size*2):(img_size*3), :] = embedding_masked
+    board[:, (img_size*3):(img_size*4), :] = all_instances
+    board[:, (img_size*4):(img_size*5), :] = instance_mask_gt_color
+    board[:, (img_size*5):(img_size*6), :] = class_mask_int_pred_color
+    board[:, (img_size*6):(img_size*7), :] = class_mask_int_gt_color
+
+    plt.figure(figsize=(4 * 7, 4))
     plt.imshow(board)

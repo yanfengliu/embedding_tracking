@@ -14,6 +14,7 @@ class Params(object):
         self.DELTA_D                  = None
         self.IMG_SIZE                 = None
         self.BACKBONE                 = None
+        self.OUTPUT_SIZE              = None
     
     def display_values(self):
         print("\nConfigurations:")
