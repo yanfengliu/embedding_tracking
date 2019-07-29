@@ -171,13 +171,17 @@ def softmax_module(x, num_filter, num_class, weight_decay=1E-5):
 
 
 def EmbeddingModel(params):
-    side = params.SIDE
-    deeplab_model       = Deeplabv3(input_shape = (side, side, 3), backbone = params.BACKBONE)
+    img_size            = params.IMG_SIZE
+    backbone            = params.BACKBONE
+    num_filter          = params.NUM_FILTER
+    num_classes         = params.NUM_CLASSES
+    embedding_dim       = params.EMBEDDING_DIM
+    
+    deeplab_model       = Deeplabv3(input_shape = (img_size, img_size, 3), backbone = backbone)
     inputs              = deeplab_model.input
     middle              = deeplab_model.get_layer(deeplab_model.layers[-3].name).output
-    classification      = softmax_module(middle, params.NUM_FILTER, params.CLASS_NUM)
-    instance_embedding  = embedding_module(middle, params.NUM_FILTER, params.EMBEDDING_DIM)
-    back_embedding      = embedding_module(middle, params.NUM_FILTER, params.EMBEDDING_DIM)
+    classification      = softmax_module(middle, num_filter, num_classes)
+    instance_embedding  = embedding_module(middle, num_filter, embedding_dim)
     final_results       = Concatenate(axis=-1)([classification,
                                                 instance_embedding])
     embedding_model = Model(inputs = inputs, outputs = final_results)
