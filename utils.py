@@ -22,6 +22,24 @@ def consecutive_integer(mask):
     return mask, change_log
 
 
+def prep_for_model(image_info):
+    x = image_info['image']
+    x = x * 2 - 1
+    x = np.expand_dims(x, axis = 0)
+
+    class_mask = image_info['class_mask']
+    class_mask = np.expand_dims(class_mask, axis = 0)
+    class_mask = np.expand_dims(class_mask, axis = -1)
+
+    instance_mask = image_info['instance_mask']
+    instance_mask = np.expand_dims(instance_mask, axis = 0)
+    instance_mask = np.expand_dims(instance_mask, axis = -1)
+
+    y = np.concatenate([class_mask, instance_mask], axis = -1)
+
+    return x, y
+
+
 def totuple(a):
     """
     Convert a numpy array to a tuple of tuples in the format of [(), (), ...]
@@ -30,3 +48,13 @@ def totuple(a):
         return [tuple(i) for i in a]
     except TypeError:
         return a
+
+
+def normalize(x):
+    """
+    Normalize input to be zero mean and divide it by its global maximum value. 
+    """
+
+    x = x - np.min(x, keepdims=False)
+    x = x / (np.max(x, keepdims=False) + 1e-10)
+    return np.copy(x)
