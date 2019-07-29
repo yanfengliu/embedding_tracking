@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from skimage.transform import resize
 
@@ -26,14 +27,12 @@ def consecutive_integer(mask):
     if (0 not in np.unique(mask)):
         mask[0, 0] = 0
     mask_values = np.unique(mask)
-    change_log = np.zeros(shape=(len(mask_values)))
     counter = 0
     for value in mask_values:
         mask_buffer[mask == value] = counter
-        change_log[counter] = value
         counter += 1
     mask = mask_buffer.astype(int)
-    return mask, change_log
+    return mask
 
 
 def prep_for_model(image_info, params):
@@ -49,6 +48,7 @@ def prep_for_model(image_info, params):
 
     instance_mask = image_info['instance_mask']
     instance_mask = resize_img(instance_mask, output_size, output_size)
+    instance_mask = consecutive_integer(instance_mask)
     instance_mask = np.expand_dims(instance_mask, axis = 0)
     instance_mask = np.expand_dims(instance_mask, axis = -1)
 
@@ -75,3 +75,11 @@ def normalize(x):
     x = x - np.min(x, keepdims=False)
     x = x / (np.max(x, keepdims=False) + 1e-10)
     return np.copy(x)
+
+
+def visualize_history(loss_history, title):
+    plt.figure(figsize=(20, 4))
+    plt.plot(loss_history)
+    plt.grid()
+    plt.title(title)
+    plt.show()

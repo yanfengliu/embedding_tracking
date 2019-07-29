@@ -212,7 +212,7 @@ def get_image_from_shapes(shapes_info, image_size):
 
     image = np.asarray(img) / 255.0
     mask = np.asarray(mask)
-    mask, _ = consecutive_integer(mask)
+    mask = consecutive_integer(mask)
     class_mask = np.asarray(class_mask)
 
     image_info = {
