@@ -9,7 +9,7 @@ from shapes import get_image_from_shapes, get_shapes
 from utils import consecutive_integer, totuple
 
 
-class ImageDataGenerator:
+class ShapeDataGenerator:
     def __init__(self, num_shape, image_size):
         self.num_shape = num_shape
         self.image_size = image_size
@@ -20,10 +20,15 @@ class ImageDataGenerator:
         shape_types = np.random.choice(
             shape_choices, size=(self.num_shape), replace=True)
         self.shapes = get_shapes(shape_types, self.image_size)
-
+    
     def render_frame(self):
         image_info = get_image_from_shapes(self.shapes, self.image_size)
         return image_info
+
+
+class ImageDataGenerator(ShapeDataGenerator):
+    def __init__(self, num_shape, image_size):
+        ShapeDataGenerator.__init__(self, num_shape, image_size)
 
     def get_image(self):
         self.init_shapes()
@@ -31,18 +36,11 @@ class ImageDataGenerator:
         return image_info
 
 
-class SequenceDataGenerator:
+class SequenceDataGenerator(ShapeDataGenerator):
     def __init__(self, num_shape, image_size, sequence_len):
-        self.num_shape = num_shape
-        self.image_size = image_size
+        ShapeDataGenerator.__init__(self, num_shape, image_size)
         self.sequence_len = sequence_len
         self.shapes = None
-
-    def init_shapes(self):
-        shape_choices = [1, 2, 3]
-        shape_types = np.random.choice(
-            shape_choices, size=(self.num_shape), replace=True)
-        self.shapes = get_shapes(shape_types, self.image_size)
 
     def get_velocities(self):
         self.velocities = np.random.randint(
@@ -81,10 +79,6 @@ class SequenceDataGenerator:
                 if y_min < 0 or y_max > self.image_size:
                     dy = -dy
             self.velocities[i] = [dx, dy]
-
-    def render_frame(self):
-        image_info = get_image_from_shapes(self.shapes, self.image_size)
-        return image_info
 
     def render_sequence(self):
         sequence = []

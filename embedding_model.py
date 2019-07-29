@@ -17,7 +17,7 @@ def loss_with_embedding_dim(params):
         batch_size    = params.BATCH_SIZE
         delta_var     = params.DELTA_VAR
         delta_d       = params.DELTA_D
-        class_num     = params.CLASS_NUM
+        class_num     = params.NUM_CLASSES
         embedding_dim = params.EMBEDDING_DIM
 
         total_loss = 0
