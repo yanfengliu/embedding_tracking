@@ -38,7 +38,7 @@ def visualize(embedding_pred, embedding_dim, output_size, class_mask_int_pred,
 
     instance_mask_gt_color = np.zeros((output_size, output_size, 3))
     for i in np.unique(instance_mask_gt):
-        instance_mask_gt_color[instance_mask_gt == i] = np.random.random((3))
+        instance_mask_gt_color[instance_mask_gt == i] = colors[int(i), :]
 
     class_max = class_num - 1
     class_mask_int_pred_color = np.zeros((output_size, output_size, 3))
