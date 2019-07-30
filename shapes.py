@@ -216,9 +216,9 @@ def get_image_from_shapes(shapes_info, image_size):
     class_mask = np.asarray(class_mask)
 
     image_info = {
-        'image':          image,
-        'instance_mask':  mask,
-        'class_mask':     class_mask
+        'image':         image,
+        'instance_mask': mask,
+        'class_mask':    class_mask
     }
 
     return image_info
