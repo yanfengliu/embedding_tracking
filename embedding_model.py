@@ -143,7 +143,8 @@ def sequence_loss_with_params(params):
             lambda: sequence_true_fn(prev_centers, centers),
             lambda: sequence_false_fn()
         )
-        loss = instance_emb_loss + semseg_loss + instance_emb_sequence_loss
+        # loss = instance_emb_loss + semseg_loss + instance_emb_sequence_loss
+        loss = instance_emb_loss + semseg_loss
         loss = tf.reshape(loss, [-1])
 
         return loss

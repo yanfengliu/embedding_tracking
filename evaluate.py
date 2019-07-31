@@ -28,10 +28,14 @@ def visualize(embedding_pred, embedding_dim, output_size, class_mask_int_pred,
     slice_0 = np.zeros((output_size, output_size))
     slice_1 = np.zeros((output_size, output_size))
     slice_2 = np.zeros((output_size, output_size))
-    for i in range(int(np.max(cluster_all_class))):
-        slice_0[cluster_all_class == i] = colors[i, 0]
-        slice_1[cluster_all_class == i] = colors[i, 1]
-        slice_2[cluster_all_class == i] = colors[i, 2]
+    
+    num_instances = int(np.max(cluster_all_class))
+    random_colors = np.random.rand((num_instances, 3))
+
+    for i in range(num_instances):
+        slice_0[cluster_all_class == i] = random_colors[i, 0]
+        slice_1[cluster_all_class == i] = random_colors[i, 1]
+        slice_2[cluster_all_class == i] = random_colors[i, 2]
     all_instances[:, :, 0] = slice_0
     all_instances[:, :, 1] = slice_1
     all_instances[:, :, 2] = slice_2
