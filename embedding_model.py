@@ -358,3 +358,4 @@ def SequenceEmbeddingModel(params):
 
     model = Model(inputs = [img_inputs, prev_emb], outputs = combined_output)
     return model
+

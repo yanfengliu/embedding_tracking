@@ -120,6 +120,8 @@ def normalize(x, val_range=None):
     else:
         val_min = np.min(x, keepdims=False)
         val_max = np.max(x, keepdims=False) + 1e-10
+    x[x > val_max] = val_max
+    x[x < val_min] = val_min
     x = (x - val_min) / (val_max - val_min)
     return np.copy(x)
 
@@ -161,8 +163,9 @@ def update_progress(progress, text=""):
         sys.stdout.flush()
 
 
-def flow_to_rgb(flow, image_size):
+def flow_to_rgb(flow):
     # read nonzero optical flow
+    image_size = flow.shape[0]
     direction_hsv = np.zeros((image_size, image_size, 3))
     dx = flow[:, :, 0]
     dy = flow[:, :, 1]
