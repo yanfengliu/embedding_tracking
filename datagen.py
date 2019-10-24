@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from shapes import get_image_from_shapes, get_shapes
+from shapes import get_image_from_shapes, get_flow_from_shapes, get_shapes
 from utils import consecutive_integer, totuple
 
 
@@ -43,12 +43,14 @@ class SequenceDataGenerator(ShapeDataGenerator):
         self.shapes = None
 
     def get_velocities(self):
-        self.velocities = np.random.randint(
+        velocities = np.random.randint(
             low=int(-0.1 * self.image_size), high=int(0.1 * self.image_size), size=(self.num_shape, 2))
+        for i in range(self.num_shape):
+            self.shapes[i]['velocity'] = velocities[i]
 
     def move(self):
         for i in range(self.num_shape):
-            velocity = self.velocities[i]
+            velocity = self.shapes[i]['velocity']
             dx, dy = velocity
             shape_info = self.shapes[i]
             shape_info['offset'] += velocity
@@ -60,13 +62,15 @@ class SequenceDataGenerator(ShapeDataGenerator):
 
     def bounce(self):
         for i in range(self.num_shape):
-            dx, dy = self.velocities[i]
+            dx, dy = self.shapes[i]['velocity']
             shape_info = self.shapes[i]
             if shape_info['type'] == 'round':
                 x1, y1 = shape_info['x1'], shape_info['y1']
-                if x1 < 0.1 * self.image_size or x1 > 0.9 * self.image_size:
+                if (x1 < 0.1 * self.image_size and dx < 0) or (
+                    x1 > 0.9 * self.image_size and dx > 0):
                     dx = -dx
-                if y1 < 0.1 * self.image_size or y1 > 0.9 * self.image_size:
+                if (y1 < 0.1 * self.image_size and dy < 0) or (
+                    y1 > 0.9 * self.image_size and dy > 0):
                     dy = -dy
             else:
                 corners = shape_info['corners']
@@ -74,23 +78,30 @@ class SequenceDataGenerator(ShapeDataGenerator):
                 x_max = np.max(corners[:, 0])
                 y_min = np.min(corners[:, 1])
                 y_max = np.max(corners[:, 1])
-                if x_min < 0.1 * self.image_size or x_max > 0.9 * self.image_size:
+                if (x_min < 0.1 * self.image_size and dx < 0) or (
+                    x_max > 0.9 * self.image_size and dx > 0):
                     dx = -dx
-                if y_min < 0.1 * self.image_size or y_max > 0.9 * self.image_size:
+                if (y_min < 0.1 * self.image_size and dy < 0) or (
+                    y_max > 0.9 * self.image_size and dy > 0):
                     dy = -dy
-            self.velocities[i] = [dx, dy]
+            self.shapes[i]['velocity'] = [dx, dy]
 
-    def render_sequence(self):
+    
+    def render_flow(self):
+        flow = get_flow_from_shapes(self.shapes, self.image_size)
+        return flow
+
+
+    def get_sequence(self):
         sequence = []
+        optical_flow = []
+        self.init_shapes()
         self.get_velocities()
         for _ in range(self.sequence_len):
             self.move()
-            self.bounce()
+            flow = self.render_flow()
             image_info = self.render_frame()
             sequence.append(image_info)
-        return sequence
-
-    def get_sequence(self):
-        self.init_shapes()
-        sequence = self.render_sequence()
-        return sequence
+            optical_flow.append(flow)
+            self.bounce()
+        return sequence, optical_flow

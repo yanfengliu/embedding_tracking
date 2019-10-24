@@ -109,13 +109,16 @@ def totuple(a):
         return a
 
 
-def normalize(x):
+def normalize(x, val_range=None):
     """
-    Normalize input to be zero mean and divide it by its global maximum value. 
+    Map x to [0, 1] using either its min and max or the given range.
     """
-
-    x = x - np.min(x, keepdims=False)
-    x = x / (np.max(x, keepdims=False) + 1e-10)
+    if val_range:
+        val_min, val_max = val_range
+    else:
+        val_min = np.min(x, keepdims=False)
+        val_max = np.max(x, keepdims=False) + 1e-10
+    x = (x - val_min) / (val_max - val_min)
     return np.copy(x)
 
 

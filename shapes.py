@@ -148,9 +148,9 @@ def draw_shapes(shape_info, draws, counter):
         draw_ellipse(draw=draw_img, bbox=bbox,
                      linewidth=line_width, image_or_mask='image')
         draw_ellipse(draw=draw_mask, bbox=bbox, linewidth=line_width,
-                     image_or_mask='mask', counter=counter)
+                     image_or_mask='mask', mask_value=counter)
         draw_ellipse(draw=draw_class_mask, bbox=bbox, linewidth=line_width,
-                     image_or_mask='mask', counter=int(shape_choice_int))
+                     image_or_mask='mask', mask_value=int(shape_choice_int))
     else:
         corners = shape_info['corners']
         shape_tuple = totuple(corners)
@@ -170,17 +170,17 @@ def draw_shapes(shape_info, draws, counter):
     return new_draws
 
 
-def draw_ellipse(draw, bbox, linewidth, image_or_mask, counter=None):
+def draw_ellipse(draw, bbox, linewidth, image_or_mask, mask_value=None):
     if image_or_mask == 'image':
         for offset, fill in (linewidth/-2.0, 'black'), (linewidth/2.0, 'white'):
             left, top = [(value + offset) for value in bbox[:2]]
             right, bottom = [(value - offset) for value in bbox[2:]]
             draw.ellipse([left, top, right, bottom], fill=fill)
     elif image_or_mask == 'mask':
-        offset, fill = (linewidth/-2.0, 'white')
+        offset = linewidth/-2.0
         left, top = [(value + offset) for value in bbox[:2]]
         right, bottom = [(value - offset) for value in bbox[2:]]
-        draw.ellipse([left, top, right, bottom], fill=counter)
+        draw.ellipse([left, top, right, bottom], fill=mask_value)
 
     return draw
 
@@ -204,8 +204,10 @@ def get_image_from_shapes(shapes_info, image_size):
     counter = 1
     num = len(shapes_info)
     instance_to_class_temp = np.zeros(shape=(num+1))
+    velocities = np.zeros((num, 2))
     for i in range(num):
         shape_info = shapes_info[i]
+        velocities[i, :] = shape_info['velocity']
         draws = draw_shapes(shape_info, draws, counter)
         counter = counter + 1
         instance_to_class_temp[i+1] = shape_info['shape_choice_int']
@@ -218,7 +220,46 @@ def get_image_from_shapes(shapes_info, image_size):
     image_info = {
         'image':         image,
         'instance_mask': mask,
-        'class_mask':    class_mask
+        'class_mask':    class_mask,
+        'velocities':    velocities
     }
 
     return image_info
+
+
+def draw_flow(shape_info, draw):
+    shape_size = shape_info['shape_size']
+    x_shift, y_shift = shape_info['offset']
+    shape_choice_int = shape_info['shape_choice_int']
+    dx, dy = shape_info['velocity']
+    # add 100 to velocities to bypass the positive value constraint for draw
+    velocity = (100 + dx, 100 + dy, 0)
+    line_width = int(0.01 * shape_size)
+
+    if (shape_info['type'] == 'round'):
+        x0 = x_shift
+        y0 = y_shift
+        x1 = shape_info['x1']
+        y1 = shape_info['y1']
+        bbox = [x0, y0, x1, y1]
+        draw_ellipse(draw=draw, bbox=bbox, linewidth=line_width,
+                     image_or_mask='mask', mask_value=velocity)
+    else:
+        corners = shape_info['corners']
+        shape_tuple = totuple(corners)
+        draw.polygon(xy=shape_tuple, fill=velocity, outline=velocity)
+
+    return draw
+
+
+def get_flow_from_shapes(shapes_info, image_size):
+    img = Image.new(mode='RGB', size=(image_size, image_size), color=(0, 0, 0))
+    draw_img = ImageDraw.Draw(img)
+    num = len(shapes_info)
+    for i in range(num):
+        shape_info = shapes_info[i]
+        draw_img = draw_flow(shape_info, draw_img)
+    flow = np.asarray(img, dtype = np.float)
+    flow = np.copy(flow[:, :, :2])
+    flow[flow != 0] -= 100
+    return flow
