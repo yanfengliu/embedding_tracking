@@ -128,12 +128,12 @@ def round_corners(draw_img, shape_tuple, line_width):
 
 
 def draw_shapes(shape_info, draws, counter):
-    shape_size = shape_info['shape_size']
+    shape_size       = shape_info['shape_size']
     x_shift, y_shift = shape_info['offset']
     shape_choice_int = shape_info['shape_choice_int']
 
-    draw_img = draws['draw_img']
-    draw_mask = draws['draw_mask']
+    draw_img        = draws['draw_img']
+    draw_mask       = draws['draw_mask']
     draw_class_mask = draws['draw_class_mask']
 
     line_width = int(0.01 * shape_size)
@@ -228,10 +228,9 @@ def get_image_from_shapes(shapes_info, image_size):
 
 
 def draw_flow(shape_info, draw):
-    shape_size = shape_info['shape_size']
+    shape_size       = shape_info['shape_size']
     x_shift, y_shift = shape_info['offset']
-    shape_choice_int = shape_info['shape_choice_int']
-    dx, dy = shape_info['velocity']
+    dx, dy           = shape_info['velocity']
     # add 100 to velocities to bypass the positive value constraint for draw
     velocity = (100 + dx, 100 + dy, 0)
     line_width = int(0.01 * shape_size)
@@ -262,4 +261,6 @@ def get_flow_from_shapes(shapes_info, image_size):
     flow = np.asarray(img, dtype = np.float)
     flow = np.copy(flow[:, :, :2])
     flow[flow != 0] -= 100
+    max_v = int(0.1 * image_size)
+    flow = flow / max_v
     return flow

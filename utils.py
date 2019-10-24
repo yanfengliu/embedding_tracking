@@ -162,19 +162,21 @@ def update_progress(progress, text=""):
 
 
 def flow_to_rgb(flow, image_size):
+    # read nonzero optical flow
     direction_hsv = np.zeros((image_size, image_size, 3))
     dx = flow[:, :, 0]
     dy = flow[:, :, 1]
     vmap = np.logical_or(dx != 0, dy != 0)
     vx = dx[vmap]
     vy = dy[vmap]
-    max_v_axis = int(image_size * 0.1)
-    mag_max = np.sqrt(max_v_axis ** 2 + max_v_axis ** 2)
+    # define min and max
+    mag_max = np.sqrt(2)
     mag_min = 0
     angle_max = np.pi
     angle_min = -np.pi
     angles = np.arctan2(vx, vy)
     magnitudes = np.sqrt(np.power(vx, 2) + np.power(vy, 2))
+    # convert to hsv
     hue = normalize(angles, [angle_min, angle_max])
     value = normalize(magnitudes, [mag_min, mag_max])
     saturation = np.zeros(angles.shape) + 1
