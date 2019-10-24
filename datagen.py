@@ -66,11 +66,11 @@ class SequenceDataGenerator(ShapeDataGenerator):
             shape_info = self.shapes[i]
             if shape_info['type'] == 'round':
                 x1, y1 = shape_info['x1'], shape_info['y1']
-                if (x1 < 0.1 * self.image_size and dx < 0) or (
-                    x1 > 0.9 * self.image_size and dx > 0):
+                if (x1 < 0.05 * self.image_size and dx < 0) or (
+                    x1 > 0.95 * self.image_size and dx > 0):
                     dx = -dx
-                if (y1 < 0.1 * self.image_size and dy < 0) or (
-                    y1 > 0.9 * self.image_size and dy > 0):
+                if (y1 < 0.05 * self.image_size and dy < 0) or (
+                    y1 > 0.95 * self.image_size and dy > 0):
                     dy = -dy
             else:
                 corners = shape_info['corners']
@@ -78,11 +78,11 @@ class SequenceDataGenerator(ShapeDataGenerator):
                 x_max = np.max(corners[:, 0])
                 y_min = np.min(corners[:, 1])
                 y_max = np.max(corners[:, 1])
-                if (x_min < 0.1 * self.image_size and dx < 0) or (
-                    x_max > 0.9 * self.image_size and dx > 0):
+                if (x_min < 0.05 * self.image_size and dx < 0) or (
+                    x_max > 0.95 * self.image_size and dx > 0):
                     dx = -dx
-                if (y_min < 0.1 * self.image_size and dy < 0) or (
-                    y_max > 0.9 * self.image_size and dy > 0):
+                if (y_min < 0.05 * self.image_size and dy < 0) or (
+                    y_max > 0.95 * self.image_size and dy > 0):
                     dy = -dy
             self.shapes[i]['velocity'] = [dx, dy]
 

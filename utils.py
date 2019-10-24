@@ -1,5 +1,7 @@
 import sys
 
+import cv2
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from IPython.display import clear_output
@@ -157,3 +159,53 @@ def update_progress(progress, text=""):
         sys.stdout.write("\r Progress: [{0}] {1:.1f}% {2}".format(
             "#" * block + "-" * (bar_length - block), progress * 100, text))
         sys.stdout.flush()
+
+
+def flow_to_rgb(flow, image_size):
+    direction_hsv = np.zeros((image_size, image_size, 3))
+    dx = flow[:, :, 0]
+    dy = flow[:, :, 1]
+    vmap = np.logical_or(dx != 0, dy != 0)
+    vx = dx[vmap]
+    vy = dy[vmap]
+    max_v_axis = int(image_size * 0.1)
+    mag_max = np.sqrt(max_v_axis ** 2 + max_v_axis ** 2)
+    mag_min = 0
+    angle_max = np.pi
+    angle_min = -np.pi
+    angles = np.arctan2(vx, vy)
+    magnitudes = np.sqrt(np.power(vx, 2) + np.power(vy, 2))
+    hue = normalize(angles, [angle_min, angle_max])
+    value = normalize(magnitudes, [mag_min, mag_max])
+    saturation = np.zeros(angles.shape) + 1
+    H = direction_hsv[:, :, 0]
+    S = direction_hsv[:, :, 1]
+    V = direction_hsv[:, :, 2]
+    H[vmap] = hue
+    S[vmap] = saturation
+    V[vmap] = value
+    direction_rgb = matplotlib.colors.hsv_to_rgb(direction_hsv)
+    return direction_rgb
+
+
+def flows_to_video(flows, video_name, fps):
+    # assumes `flows` contains square images in shape of (x, x, 3)
+    images = []
+    image_size = flows[0].shape[0]
+    for flow in flows:
+        image = flow_to_rgb(flow, image_size)
+        image = image * 255
+        image = image.astype(np.uint8)
+        images.append(image)
+    imgs_to_video(images, video_name, fps)
+    return
+
+
+def imgs_to_video(images, video_name, fps):
+    # assumes `images` contains square images in shape of (x, x, 3)
+    image_size = images[0].shape[0]
+    video = cv2.VideoWriter(video_name, 0, fps, (image_size, image_size))
+    for image in images:
+        video.write(image)
+    video.release()
+    return
