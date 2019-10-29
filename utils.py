@@ -181,8 +181,8 @@ def flow_to_rgb(flow):
     magnitudes = np.sqrt(np.power(vx, 2) + np.power(vy, 2))
     # convert to hsv
     hue = normalize(angles, [angle_min, angle_max])
-    value = normalize(magnitudes, [mag_min, mag_max])
-    saturation = np.zeros(angles.shape) + 1
+    saturation = normalize(magnitudes, [mag_min, mag_max])
+    value = np.zeros(angles.shape) + 1
     H = direction_hsv[:, :, 0]
     S = direction_hsv[:, :, 1]
     V = direction_hsv[:, :, 2]
@@ -196,9 +196,8 @@ def flow_to_rgb(flow):
 def flows_to_video(flows, video_name, fps):
     # assumes `flows` contains square images in shape of (x, x, 3)
     images = []
-    image_size = flows[0].shape[0]
     for flow in flows:
-        image = flow_to_rgb(flow, image_size)
+        image = flow_to_rgb(flow)
         image = image * 255
         image = image.astype(np.uint8)
         images.append(image)
