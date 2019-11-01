@@ -338,24 +338,33 @@ def ImageEmbeddingModel(params):
 
 
 def SequenceEmbeddingModel(params):
-    img_size            = params.IMG_SIZE
-    output_size         = params.OUTPUT_SIZE
-    backbone            = params.BACKBONE
-    num_filter          = params.NUM_FILTER
-    num_classes         = params.NUM_CLASSES
-    embedding_dim       = params.EMBEDDING_DIM
+    img_size                = params.IMG_SIZE
+    backbone                = params.BACKBONE
+    num_filter              = params.NUM_FILTER
+    num_classes             = params.NUM_CLASSES
+    embedding_dim           = params.EMBEDDING_DIM
     
-    deeplab_model       = Deeplabv3(input_shape = (img_size, img_size, 3), backbone = backbone)
-    img_inputs          = deeplab_model.input
-    middle              = deeplab_model.get_layer(deeplab_model.layers[-3].name).output
-    middle_emb_dim      = dimension_conversion_module(middle, embedding_dim)
-    prev_emb            = Input(shape = (output_size, output_size, embedding_dim))
-    middle_prev_emb     = Concatenate(axis=-1)([middle_emb_dim, prev_emb])
-    classification      = softmax_module(  middle_prev_emb, num_filter, num_classes)
-    instance_embedding  = embedding_module(middle_prev_emb, num_filter, embedding_dim)
-    combined_output     = Concatenate(axis=-1)([classification,
-                                                instance_embedding])
+    # model definition
+    deeplab_model           = Deeplabv3(input_shape = (img_size, img_size, 6 + embedding_dim), backbone = backbone)
 
-    model = Model(inputs = [img_inputs, prev_emb], outputs = combined_output)
+    # inputs
+    img_inputs              = deeplab_model.input
+
+    # intermediate representations
+    middle                  = deeplab_model.get_layer(deeplab_model.layers[-3].name).output
+
+    # outputs
+    instance_embedding      = embedding_module(middle, num_filter, embedding_dim)
+    semantic_segmentation   = softmax_module(  middle, num_filter, num_classes)
+    optical_flow            = embedding_module(middle, num_filter, 2)
+
+    # concatenate outputs
+    combined_output         = Concatenate(axis=-1)([
+        instance_embedding,
+        semantic_segmentation,
+        optical_flow])
+
+    # build model
+    model = Model(inputs = [img_inputs], outputs = combined_output)
     return model
 

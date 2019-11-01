@@ -71,6 +71,7 @@ def get_square_corners(shape_size):
 def get_shape(shape_choice_int, shape_size):
     shape_info = {}
     shape_info['shape_size'] = shape_size
+    shape_info['scale_factor'] = 1.0
     shape_choice_str = int_to_shape[shape_choice_int]
     shape_info['shape_choice_int'] = shape_choice_int
     shape_info['shape_choice_str'] = shape_choice_str
@@ -129,12 +130,16 @@ def round_corners(draw_img, shape_tuple, line_width):
 
 def draw_shapes(shape_info, draws, counter):
     shape_size       = shape_info['shape_size']
+    scale_factor     = shape_info['scale_factor']
     x_shift, y_shift = shape_info['offset']
     shape_choice_int = shape_info['shape_choice_int']
 
-    draw_img        = draws['draw_img']
-    draw_mask       = draws['draw_mask']
-    draw_class_mask = draws['draw_class_mask']
+    draw_img         = draws['draw_img']
+    draw_mask        = draws['draw_mask']
+    draw_class_mask  = draws['draw_class_mask']
+
+    # adjust shape sizes by the scale factor
+    shape_size *= scale_factor
 
     line_width = int(0.01 * shape_size)
 
@@ -186,10 +191,9 @@ def draw_ellipse(draw, bbox, linewidth, image_or_mask, mask_value=None):
 
 
 def get_image_from_shapes(shapes_info, image_size):
-    img = Image.new(mode='RGB', size=(
-        image_size, image_size), color=(255, 255, 255))
-    mask = Image.new(mode='I', size=(image_size, image_size), color=0)
-    class_mask = Image.new(mode='I', size=(image_size, image_size), color=0)
+    img        = Image.new(mode='RGB', size=(image_size, image_size), color=(255, 255, 255))
+    mask       = Image.new(mode='I',   size=(image_size, image_size), color=0)
+    class_mask = Image.new(mode='I',   size=(image_size, image_size), color=0)
 
     draw_img = ImageDraw.Draw(img)
     draw_mask = ImageDraw.Draw(mask)
