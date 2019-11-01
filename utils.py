@@ -127,7 +127,7 @@ def normalize(x, val_range=None):
 
 
 def visualize_history(loss_history, title):
-    plt.figure(figsize=(20, 4))
+    plt.figure(figsize=(10, 2))
     plt.plot(loss_history)
     plt.grid()
     plt.title(title)
