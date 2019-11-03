@@ -68,9 +68,10 @@ def get_square_corners(shape_size):
     return corners
 
 
-def get_shape(shape_choice_int, shape_size):
+def get_shape(shape_choice_int, shape_size, identity):
     shape_info = {}
     shape_info['shape_size'] = shape_size
+    shape_info['identity'] = identity
     shape_info['scale_factor'] = 1.0
     shape_choice_str = int_to_shape[shape_choice_int]
     shape_info['shape_choice_int'] = shape_choice_int
@@ -111,9 +112,11 @@ def get_shape(shape_choice_int, shape_size):
 
 def get_shapes(shape_types, shape_size):
     shapes_info = []
+    identity = 1
     for shape_choice_int in shape_types:
-        shape_info = get_shape(shape_choice_int, shape_size)
+        shape_info = get_shape(shape_choice_int, shape_size, identity)
         shapes_info.append(shape_info)
+        identity += 1
 
     return shapes_info
 
@@ -130,6 +133,7 @@ def round_corners(draw_img, shape_tuple, line_width):
 
 def draw_shapes(shape_info, draws, counter):
     shape_size       = shape_info['shape_size']
+    identity         = shape_info['identity']
     scale_factor     = shape_info['scale_factor']
     x_shift, y_shift = shape_info['offset']
     shape_choice_int = shape_info['shape_choice_int']
@@ -137,6 +141,7 @@ def draw_shapes(shape_info, draws, counter):
     draw_img         = draws['draw_img']
     draw_mask        = draws['draw_mask']
     draw_class_mask  = draws['draw_class_mask']
+    draw_identity    = draws['draw_identity']
 
     # adjust shape sizes by the scale factor
     shape_size *= scale_factor
@@ -156,6 +161,8 @@ def draw_shapes(shape_info, draws, counter):
                      image_or_mask='mask', mask_value=counter)
         draw_ellipse(draw=draw_class_mask, bbox=bbox, linewidth=line_width,
                      image_or_mask='mask', mask_value=int(shape_choice_int))
+        draw_ellipse(draw=draw_identity, bbox=bbox, linewidth=line_width,
+                     image_or_mask='mask', mask_value=int(identity))
     else:
         corners = shape_info['corners']
         shape_tuple = totuple(corners)
@@ -163,13 +170,15 @@ def draw_shapes(shape_info, draws, counter):
         draw_img.line(xy=shape_tuple, fill=(0, 0, 0), width=line_width)
         round_corners(draw_img, shape_tuple, line_width)
         draw_mask.polygon(xy=shape_tuple, fill=counter, outline=counter)
-        draw_class_mask.polygon(xy=shape_tuple, fill=int(
-            shape_choice_int), outline=int(shape_choice_int))
+        draw_class_mask.polygon(xy=shape_tuple, fill=int(shape_choice_int), 
+            outline=int(shape_choice_int))
+        draw_identity.polygon(xy=shape_tuple, fill=int(identity), outline=int(identity))
 
     new_draws = {
         'draw_img': draw_img,
         'draw_mask': draw_mask,
-        'draw_class_mask': draw_class_mask
+        'draw_class_mask': draw_class_mask,
+        'draw_identity': draw_identity
     }
 
     return new_draws
@@ -190,41 +199,44 @@ def draw_ellipse(draw, bbox, linewidth, image_or_mask, mask_value=None):
     return draw
 
 
-def get_image_from_shapes(shapes_info, image_size):
-    img        = Image.new(mode='RGB', size=(image_size, image_size), color=(255, 255, 255))
-    mask       = Image.new(mode='I',   size=(image_size, image_size), color=0)
-    class_mask = Image.new(mode='I',   size=(image_size, image_size), color=0)
+def get_image_from_shapes(shapes, image_size):
+    img           = Image.new(mode='RGB', size=(image_size, image_size), color=(255, 255, 255))
+    mask          = Image.new(mode='I',   size=(image_size, image_size), color=0)
+    class_mask    = Image.new(mode='I',   size=(image_size, image_size), color=0)
+    identity_mask = Image.new(mode='I',   size=(image_size, image_size), color=0)
 
     draw_img = ImageDraw.Draw(img)
     draw_mask = ImageDraw.Draw(mask)
     draw_class_mask = ImageDraw.Draw(class_mask)
+    draw_identity = ImageDraw.Draw(identity_mask)
 
     draws = {
         'draw_img': draw_img,
         'draw_mask': draw_mask,
-        'draw_class_mask': draw_class_mask
+        'draw_class_mask': draw_class_mask,
+        'draw_identity': draw_identity
     }
 
     counter = 1
-    num = len(shapes_info)
-    instance_to_class_temp = np.zeros(shape=(num+1))
+    num = len(shapes)
     velocities = np.zeros((num, 2))
     for i in range(num):
-        shape_info = shapes_info[i]
+        shape_info = shapes[i]
         velocities[i, :] = shape_info['velocity']
         draws = draw_shapes(shape_info, draws, counter)
         counter = counter + 1
-        instance_to_class_temp[i+1] = shape_info['shape_choice_int']
 
     image = np.asarray(img) / 255.0
     mask = np.asarray(mask)
     mask = consecutive_integer(mask)
     class_mask = np.asarray(class_mask)
+    identity_mask = np.asarray(identity_mask)
 
     image_info = {
         'image':         image,
         'instance_mask': mask,
         'class_mask':    class_mask,
+        'identity_mask': identity_mask,
         'velocities':    velocities
     }
 
