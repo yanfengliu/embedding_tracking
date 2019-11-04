@@ -343,7 +343,7 @@ def SequenceEmbeddingModel(params):
     embedding_dim           = params.EMBEDDING_DIM
     
     # model definition
-    deeplab_model           = Deeplabv3(input_shape = (img_size, img_size, 6 + embedding_dim), backbone = backbone)
+    deeplab_model           = Deeplabv3(input_shape = (img_size, img_size, 6), backbone = backbone)
 
     # inputs
     img_inputs              = deeplab_model.input
@@ -352,17 +352,21 @@ def SequenceEmbeddingModel(params):
     middle                  = deeplab_model.get_layer(deeplab_model.layers[-3].name).output
 
     # outputs
+    class_mask              = softmax_module(  middle, num_filter, num_classes)
     instance_embedding      = embedding_module(middle, num_filter, embedding_dim)
-    semantic_segmentation   = softmax_module(  middle, num_filter, num_classes)
+    class_mask_prev         = softmax_module(  middle, num_filter, num_classes)
+    instance_embedding_prev = softmax_module(  middle, num_filter, num_classes)
     optical_flow            = embedding_module(middle, num_filter, 2)
 
     # concatenate outputs
-    combined_output         = Concatenate(axis=-1)([
+    combined_output = Concatenate(axis=-1)([
+        class_mask,
+        class_mask_prev,
         instance_embedding,
-        semantic_segmentation,
+        instance_embedding_prev,
         optical_flow])
 
     # build model
-    model = Model(inputs = [img_inputs], outputs = combined_output)
+    model = Model(inputs = img_inputs, outputs = combined_output)
     return model
 
