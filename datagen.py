@@ -99,7 +99,6 @@ class SequenceDataGenerator(ShapeDataGenerator):
 
     def get_sequence(self):
         sequence = []
-        flows = []
         self.init_shapes()
         self.get_velocities()
         for _ in range(self.sequence_len):
