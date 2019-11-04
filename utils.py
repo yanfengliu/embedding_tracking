@@ -23,9 +23,10 @@ def resize_img(img, width, height):
 def consecutive_integer(mask):
     """
     Convert input mask into consecutive integer values, starting from 0. 
-    If the background class is missing to start with, we manually inject a background pixel at [0, 0]
-    so that the loss function will run properly. We realize that this is suboptimal and will explore 
-    better solutions in the future. 
+    If the background class is missing to start with, we manually inject 
+    a background pixel at [0, 0] so that the loss function will run properly. 
+    We realize that this is suboptimal and will explore better solutions 
+    in the future. 
     """
 
     mask_buffer = np.zeros(mask.shape)
@@ -33,6 +34,7 @@ def consecutive_integer(mask):
         mask[0, 0] = 0
     mask_values = np.unique(mask)
     counter = 0
+    # this works because np.unique() sorts in ascending order
     for value in mask_values:
         mask_buffer[mask == value] = counter
         counter += 1
@@ -40,16 +42,27 @@ def consecutive_integer(mask):
     return mask
 
 
-def prep_image_for_model(image_info, params):
+def prep_image(image_info):
+    image = image_info['image']
+    image = image * 2 - 1
+    image = np.expand_dims(image, axis = 0)
+
+    return image
+
+
+def prep_class_mask(image_info, params):
     output_size = params.OUTPUT_SIZE
-    x = image_info['image']
-    x = x * 2 - 1
-    x = np.expand_dims(x, axis = 0)
 
     class_mask    = image_info['class_mask']
     class_mask    = resize_img(class_mask, output_size, output_size)
     class_mask    = np.expand_dims(class_mask, axis = 0)
     class_mask    = np.expand_dims(class_mask, axis = -1)
+
+    return class_mask
+
+
+def prep_instance_mask(image_info, params):
+    output_size = params.OUTPUT_SIZE
 
     instance_mask = image_info['instance_mask']
     instance_mask = resize_img(instance_mask, output_size, output_size)
@@ -57,34 +70,88 @@ def prep_image_for_model(image_info, params):
     instance_mask = np.expand_dims(instance_mask, axis = 0)
     instance_mask = np.expand_dims(instance_mask, axis = -1)
 
+    return instance_mask
+
+
+def prep_embedding(emb, params):
+    img_size = params.IMG_SIZE
+
+    emb = np.squeeze(emb)
+    emb = resize(emb, [img_size, img_size])
+    emb = np.expand_dims(emb, axis = 0)
+
+    return emb
+
+
+def prep_identity_mask(image_info, params):
+    output_size = params.OUTPUT_SIZE
+
+    identity_mask = image_info['identity_mask']
+    identity_mask = resize_img(identity_mask, output_size, output_size)
+    identity_mask = np.expand_dims(identity_mask, axis = 0)
+    identity_mask = np.expand_dims(identity_mask, axis = -1)
+
+    return identity_mask
+
+
+def prep_optical_flow(image_info, params):
+    output_size = params.OUTPUT_SIZE
+
+    optical_flow = image_info['optical_flow']
+    optical_flow = resize_img(optical_flow, output_size, output_size)
+    optical_flow = np.expand_dims(optical_flow, axis = 0)
+
+    return optical_flow
+
+
+def prep_single_frame(image_info, params):
+    image         = prep_image(image_info)
+    class_mask    = prep_class_mask(image_info, params)
+    instance_mask = prep_instance_mask(image_info, params)
+
+    x = image
     y = np.concatenate([class_mask, instance_mask], axis = -1)
 
     return x, y
 
 
-def prep_half_pair_for_model(image_info, params):
-    x, y = prep_image_for_model(image_info, params)
-    output_size   = params.OUTPUT_SIZE
+def prep_half_pair(image_info, params):
+    img_size      = params.IMG_SIZE
     embedding_dim = params.EMBEDDING_DIM
-    empty_prev_emb = np.zeros((1, output_size, output_size, embedding_dim))
-    x = [x, empty_prev_emb]
-    y = np.concatenate([y, empty_prev_emb], axis = -1)
+
+    image         = prep_image(image_info)
+    class_mask    = prep_class_mask(image_info, params)
+    instance_mask = prep_instance_mask(image_info, params)
+
+    empty_prev_emb = np.zeros((1, img_size, img_size, embedding_dim))
+    empty_prev_img = np.zeros((1, img_size, img_size, 3))
+
+    x = np.concatenate((empty_prev_emb, empty_prev_img, image), axis = -1)
+    y = np.concatenate([class_mask, instance_mask], axis = -1)
+    
     return x, y
 
 
-def prep_pair_for_model(image_info, params, prev_image_info, emb):
-    emb = np.squeeze(emb)
-    prev_instance_mask = prev_image_info['instance_mask']
-    output_size = params.OUTPUT_SIZE
-    prev_instance_mask = resize_img(prev_instance_mask, output_size, output_size)
-    centers = get_masked_emb(emb, prev_instance_mask)
-    x, y = prep_image_for_model(image_info, params)
+def prep_pair(image_info, prev_image_info, prev_emb, params):
+    img_size      = params.IMG_SIZE
     output_size   = params.OUTPUT_SIZE
     embedding_dim = params.EMBEDDING_DIM
-    prev_emb = np.zeros((1, output_size, output_size, embedding_dim))
-    prev_emb[0, 0, :centers.shape[0], :] = centers
-    x = [x, prev_emb]
-    y = np.concatenate([y, prev_emb], axis = -1)
+
+    image              = prep_image(image_info)
+    prev_image         = prep_image(prev_image_info)
+    prev_emb           = prep_embedding(prev_emb, params)
+
+    class_mask         = prep_class_mask(image_info, params)
+    instance_mask      = prep_instance_mask(image_info, params)
+    prev_instance_mask = prep_instance_mask(prev_image_info, params)
+    identity           = prep_identity_mask(image_info, params)
+    prev_identity      = prep_identity_mask(prev_image_info, params)
+    optical_flow       = prep_optical_flow(prev_image_info, params)
+
+    x = np.concatenate((image, prev_image, prev_emb), axis = -1)
+    y = np.concatenate((class_mask, instance_mask, prev_instance_mask, 
+        identity, prev_identity, optical_flow), axis = -1)
+
     return x, y
 
 

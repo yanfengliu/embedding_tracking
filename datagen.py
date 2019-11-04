@@ -104,9 +104,9 @@ class SequenceDataGenerator(ShapeDataGenerator):
         self.get_velocities()
         for _ in range(self.sequence_len):
             self.move()
-            flow = self.render_flow()
             image_info = self.render_frame()
+            flow = self.render_flow()
+            image_info['optical_flow'] = flow
             sequence.append(image_info)
-            flows.append(flow)
             self.bounce()
-        return sequence, flows
+        return sequence
