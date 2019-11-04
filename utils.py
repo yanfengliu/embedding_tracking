@@ -118,15 +118,16 @@ def prep_single_frame(image_info, params):
 def prep_double_frame(image_info, prev_image_info, params):
     image         = prep_image(image_info)
     class_mask    = prep_class_mask(image_info, params)
-    instance_mask = prep_instance_mask(image_info, params)
+    identity_mask = prep_identity_mask(image_info, params)
 
     prev_image         = prep_image(prev_image_info)
     prev_class_mask    = prep_class_mask(prev_image_info, params)
-    prev_instance_mask = prep_instance_mask(prev_image_info, params)
+    prev_identity_mask = prep_identity_mask(prev_image_info, params)
 
     x = np.concatenate((image, prev_image), axis = -1)
     y = np.concatenate((class_mask, prev_class_mask, 
-        instance_mask, prev_instance_mask), axis = -1)
+        identity_mask, prev_identity_mask), axis = -1)
+    return x, y
 
 
 def prep_half_pair(image_info, params):

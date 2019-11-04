@@ -20,16 +20,17 @@ def sequence_loss_with_params(params):
 
         # unpack ground truth contents
         class_mask         = y_true[:, :, :, 0]
-        instance_mask      = y_true[:, :, :, 1]
-        prev_instance_mask = y_true[:, :, :, 2]
-        identity_mask      = y_true[:, :, :, 3]
-        prev_identity_mask = y_true[:, :, :, 4]
-        optical_flow       = y_true[:, :, :, 5:6]
+        prev_class_mask    = y_true[:, :, :, 1]
+        identity_mask      = y_true[:, :, :, 2]
+        prev_identity_mask = y_true[:, :, :, 3]
+        optical_flow       = y_true[:, :, :, 4:5]
 
         # y_pred
-        class_pred   = y_pred[:, :, :, :class_num]
-        instance_emb = y_pred[:, :, :, (class_num):(class_num + embedding_dim)]
-        optical_flow = y_pred[:, :, :, (class_num + embedding_dim):]
+        class_pred        = y_pred[:, :, :, :class_num]
+        prev_class_pred   = y_pred[:, :, :, class_num:(class_num * 2)]
+        instance_emb      = y_pred[:, :, :, (class_num * 2):(class_num * 2 + embedding_dim)]
+        prev_instance_emb = y_pred[:, :, :, (class_num * 2 + embedding_dim):(class_num * 2 + embedding_dim * 2)]
+        optical_flow      = y_pred[:, :, :, (class_num * 2 + embedding_dim * 2):]
 
         # get number of pixels and clusters (without background)
         num_cluster = tf.reduce_max(instance_mask)
