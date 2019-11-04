@@ -110,24 +110,44 @@ def prep_single_frame(image_info, params):
     instance_mask = prep_instance_mask(image_info, params)
 
     x = image
-    y = np.concatenate([class_mask, instance_mask], axis = -1)
+    y = np.concatenate((class_mask, instance_mask), axis = -1)
 
     return x, y
+
+
+def prep_double_frame(image_info, prev_image_info, params):
+    image         = prep_image(image_info)
+    class_mask    = prep_class_mask(image_info, params)
+    instance_mask = prep_instance_mask(image_info, params)
+
+    prev_image         = prep_image(prev_image_info)
+    prev_class_mask    = prep_class_mask(prev_image_info, params)
+    prev_instance_mask = prep_instance_mask(prev_image_info, params)
+
+    x = np.concatenate((image, prev_image), axis = -1)
+    y = np.concatenate((class_mask, prev_class_mask, 
+        instance_mask, prev_instance_mask), axis = -1)
 
 
 def prep_half_pair(image_info, params):
     img_size      = params.IMG_SIZE
     embedding_dim = params.EMBEDDING_DIM
+    output_size   = params.OUTPUT_SIZE
 
     image         = prep_image(image_info)
     class_mask    = prep_class_mask(image_info, params)
     instance_mask = prep_instance_mask(image_info, params)
 
-    empty_prev_emb = np.zeros((1, img_size, img_size, embedding_dim))
-    empty_prev_img = np.zeros((1, img_size, img_size, 3))
+    empty_prev_emb           = np.zeros((1, img_size, img_size, embedding_dim))
+    empty_prev_img           = np.zeros((1, img_size, img_size, 3))
+    empty_prev_instance_mask = np.zeros((1, output_size, output_size, 1))
+    empty_identity_mask      = np.zeros((1, output_size, output_size, 1))
+    empty_prev_identity_mask = np.zeros((1, output_size, output_size, 1))
+    empty_optical_flow       = np.zeros((1, output_size, output_size, 2))
 
-    x = np.concatenate((empty_prev_emb, empty_prev_img, image), axis = -1)
-    y = np.concatenate([class_mask, instance_mask], axis = -1)
+    x = np.concatenate((image, empty_prev_img, empty_prev_emb), axis = -1)
+    y = np.concatenate((class_mask, instance_mask, empty_prev_instance_mask, 
+        empty_identity_mask, empty_prev_identity_mask, empty_optical_flow), axis = -1)
     
     return x, y
 

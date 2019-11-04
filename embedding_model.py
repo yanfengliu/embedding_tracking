@@ -11,8 +11,7 @@ from deeplabv3.model import Deeplabv3
 
 
 def sequence_loss_with_params(params):
-    def sequential_embedding_loss(y_true, y_pred):
-
+    def double_frame_sequence_loss(y_true, y_pred):
         # hyperparameters
         delta_var     = params.DELTA_VAR
         delta_d       = params.DELTA_D
@@ -20,24 +19,21 @@ def sequence_loss_with_params(params):
         embedding_dim = params.EMBEDDING_DIM
 
         # unpack ground truth contents
-        class_mask        = y_true[:, :, :, 0]
-        instance_mask     = y_true[:, :, :, 1]
-        prev_instance_emb = y_true[:, :, :, 2:(2 + embedding_dim)]
+        class_mask         = y_true[:, :, :, 0]
+        instance_mask      = y_true[:, :, :, 1]
+        prev_instance_mask = y_true[:, :, :, 2]
+        identity_mask      = y_true[:, :, :, 3]
+        prev_identity_mask = y_true[:, :, :, 4]
+        optical_flow       = y_true[:, :, :, 5:6]
 
         # y_pred
         class_pred   = y_pred[:, :, :, :class_num]
         instance_emb = y_pred[:, :, :, (class_num):(class_num + embedding_dim)]
+        optical_flow = y_pred[:, :, :, (class_num + embedding_dim):]
 
         # get number of pixels and clusters (without background)
         num_cluster = tf.reduce_max(instance_mask)
         num_cluster = tf.cast(num_cluster, tf.int32)
-        begin_idx = tf.constant([0, 0, 0, 0])
-        size_tensor = tf.constant([0, 0, 0, 1]) * embedding_dim + \
-                      tf.constant([0, 0, 1, 0]) * num_cluster + \
-                      tf.constant([1, 1, 0, 0])
-        prev_centers = tf.slice(prev_instance_emb, begin_idx, size_tensor)
-        prev_centers = tf.squeeze(prev_centers)
-        prev_centers = tf.transpose(prev_centers)
 
         # one-hot encoding for mask
         instance_mask = tf.cast(instance_mask, tf.int32)
@@ -148,12 +144,11 @@ def sequence_loss_with_params(params):
         loss = tf.reshape(loss, [-1])
 
         return loss
-    return sequential_embedding_loss
+    return double_frame_sequence_loss
 
 
-def loss_with_params(params):
+def single_frame_loss_with_params(params):
     def multi_class_instance_embedding_loss(y_true, y_pred):
-
         # hyperparameters
         batch_size    = params.BATCH_SIZE
         delta_var     = params.DELTA_VAR
