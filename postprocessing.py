@@ -2,6 +2,34 @@ import numpy as np
 import time
 
 
+def embedding_to_instance(embedding, class_mask, params):
+    output_size              = params.OUTPUT_SIZE
+    class_num                = params.NUM_CLASSES
+    ETH_mean_shift_threshold = params.ETH_MEAN_SHIFT_THRESHOLD
+
+    class_mask_int = np.argmax(class_mask, axis=-1)
+    cluster_all_class = np.zeros((output_size, output_size*2))
+    previous_highest_label = 0
+    instance_to_class = []
+    for j in range(class_num-1):
+        class_mask_slice = np.zeros((output_size, output_size*2))
+        class_mask_slice[class_mask_int == j+1] = 1
+        cluster = ETH_mean_shift(
+            data=embedding, 
+            mask=class_mask_slice, 
+            threshold=ETH_mean_shift_threshold)
+        instance_to_class += [j+1] * np.max(cluster).astype(np.int)
+        cluster[cluster != 0] += previous_highest_label
+        filter_mask = class_mask_slice > 0
+        filter_template = np.zeros((output_size, output_size*2))
+        filter_template[filter_mask] = 1
+        cluster = np.multiply(cluster, filter_template)
+        cluster_all_class += cluster
+        previous_highest_label = np.max(cluster_all_class)
+
+    return cluster_all_class
+
+
 def ETH_mean_shift(data, mask, threshold=0.5):
     """
     Perform adapted fast mean shift on pixel embedding output. Based on
