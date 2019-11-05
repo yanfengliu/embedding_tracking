@@ -35,7 +35,7 @@ def sequence_loss_with_params(params):
         # flatten and combine
         # -identity mask gt
         identity_mask_flat            = K.flatten(identity_mask)
-        prev_identity_mask_flat       = K.reshape(prev_identity_mask)
+        prev_identity_mask_flat       = K.flatten(prev_identity_mask)
         combined_identity_mask_flat   = tf.concat((identity_mask_flat, prev_identity_mask_flat), axis=0)
         # -instance embedding pred
         instance_emb_flat             = tf.reshape(instance_emb, shape=(-1, embedding_dim))
@@ -92,7 +92,7 @@ def sequence_loss_with_params(params):
         filtered_class = tf.multiply(tf.cast(combined_identity_mask_flat_one_hot, tf.float32), tf.cast(combined_class_mask_gt_flat, tf.float32))
         # shrink to a 1 by num_of_cluster vector to map instance to class;
         # by reduce_max, any class other than 0 (background) stands out
-        instance_to_class = tf.reduce_max(filtered_class, axis = [0, 1])
+        instance_to_class = tf.reduce_max(filtered_class, axis = [0])
 
         def distance_true_fn(num_cluster_by_class, centers_by_class):
             centers_row_buffer = tf.ones((embedding_dim, num_cluster_by_class, num_cluster_by_class))
@@ -343,13 +343,16 @@ def SequenceEmbeddingModel(params):
     embedding_dim           = params.EMBEDDING_DIM
     
     # model definition
-    deeplab_model           = Deeplabv3(input_shape = (img_size, img_size, 6), backbone = backbone)
+    deeplab_model = Deeplabv3(
+        weights = None, 
+        input_shape = (img_size, img_size, 6), 
+        backbone = backbone)
 
     # inputs
-    img_inputs              = deeplab_model.input
+    img_inputs = deeplab_model.input
 
     # intermediate representations
-    middle                  = deeplab_model.get_layer(deeplab_model.layers[-3].name).output
+    middle = deeplab_model.get_layer(deeplab_model.layers[-3].name).output
 
     # outputs
     class_mask              = softmax_module(  middle, num_filter, num_classes)
