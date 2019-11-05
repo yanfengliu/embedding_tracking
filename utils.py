@@ -156,10 +156,6 @@ def prep_half_pair(image_info, params):
 
 
 def prep_pair(image_info, prev_image_info, prev_emb, params):
-    img_size      = params.IMG_SIZE
-    output_size   = params.OUTPUT_SIZE
-    embedding_dim = params.EMBEDDING_DIM
-
     image              = prep_image(image_info)
     prev_image         = prep_image(prev_image_info)
     prev_emb           = prep_embedding(prev_emb, params)

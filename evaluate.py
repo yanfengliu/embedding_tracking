@@ -5,8 +5,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 from postprocessing import ETH_mean_shift
-from utils import (normalize, prep_half_pair_for_model, prep_image_for_model,
-                   prep_pair_for_model, resize_img)
+from utils import *
 
 
 def visualize(embedding_pred, embedding_dim, output_size, class_mask_int_pred,
@@ -74,57 +73,102 @@ def visualize(embedding_pred, embedding_dim, output_size, class_mask_int_pred,
 def single_eval(model, x, y, params):
     class_num                = params.NUM_CLASSES
     embedding_dim            = params.EMBEDDING_DIM
-    ETH_mean_shift_threshold = params.ETH_MEAN_SHIFT_THRESHOLD
     output_size              = params.OUTPUT_SIZE
-    task                     = params.TASK
     colors                   = params.COLORS
 
-    if task == 'image':
-        image = np.squeeze(x)
-    elif task == 'sequence':
-        image = np.squeeze(x[0])
-
-    class_mask_gt = y[0, ..., 0]
-    instance_mask_gt = y[0, ..., 1]
-
     outputs = model.predict(x)
-
     class_mask_pred = outputs[0, :, :, :class_num]
-    embedding_pred = outputs[0, :, :, class_num:(class_num + embedding_dim)]
-
-    ### Post-processing ###
-    # separate the process for different non-background classes
+    embedding_pred  = outputs[0, :, :, class_num:(class_num + embedding_dim)]
     class_mask_int_pred = np.argmax(class_mask_pred, axis=-1)
-    cluster_all_class = np.zeros((output_size, output_size))
+    cluster_all_class = embedding_to_instance(embedding_pred, class_mask_pred, params)
+    image = np.squeeze(x)
+    class_mask_gt    = y[0, ..., 0]
+    instance_mask_gt = y[0, ..., 1]
+    visualize(embedding_pred, embedding_dim, output_size, class_mask_int_pred,
+              cluster_all_class, instance_mask_gt, class_num, class_mask_gt, colors, image)
+
+
+def eval_pair(model, pair, params):
+    class_num                = params.NUM_CLASSES
+    embedding_dim            = params.EMBEDDING_DIM
+    output_size              = params.OUTPUT_SIZE
+    image_size               = params.IMG_SIZE
+    colors                   = params.COLORS
+
+    images = np.zeros((image_size, image_size*2, 3))
+    board = np.zeros((output_size*2, output_size*5, 3))
+    image_info, prev_image_info = pair
+
+    image              = image_info['image']
+    identity_mask      = image_info['identity_mask']
+    class_mask         = image_info['class_mask']
+
+    prev_image         = prev_image_info['image']
+    prev_identity_mask = prev_image_info['identity_mask']
+    prev_class_mask    = prev_image_info['class_mask']
+    optical_flow       = prev_image_info['optical_flow']
+
+    images[:image_size, :, :, :] = image
+    images[image_size:, :, :, :] = prev_image
+
+    board[:output_size, :output_size]                    = identity_mask
+    board[:output_size, output_size:(output_size*2)]     = class_mask
+    board[:output_size, (output_size*2):(output_size*3)] = prev_identity_mask
+    board[:output_size, (output_size*3):(output_size*4)] = prev_class_mask
+    board[:output_size, (output_size*4):(output_size*5)] = optical_flow
+
+    x, y = prep_double_frame(image_info, prev_image_info, params)
+    outputs = model.predict(x)
+    outputs = np.squeeze(outputs)
+
+    class_mask_pred      = outputs[0, :, :, :class_num]
+    class_mask_prev_pred = outputs[0, :, :, class_num:(class_num*2)]
+    embedding_pred       = outputs[0, :, :, (class_num*2):(class_num*2 + embedding_dim)]
+    embedding_prev_pred  = outputs[0, :, :, (class_num*2 + embedding_dim):((class_num*2 + embedding_dim*2))]
+    optical_flow_pred    = outputs[0, :, :, (class_num*2 + embedding_dim*2):]
+
+    combined_class_mask_pred = np.zeros((output_size, output_size*2))
+    combined_embeding_pred   = np.zeros((output_size, output_size*2, embedding_dim))
+
+    combined_class_mask_pred[:, :output_size] = class_mask_pred
+    combined_class_mask_pred[:, output_size:] = class_mask_prev_pred
+    combined_embeding_pred[:, :output_size, :] = embedding_pred
+    combined_embeding_pred[:, output_size:, :] = embedding_prev_pred
+
+    cluster_all_class = embedding_to_instance(combined_embeding_pred, combined_class_mask_pred, params)
+    identity_mask_pred      = cluster_all_class[:, :output_size]
+    prev_identity_mask_pred = cluster_all_class[:, output_size:]
+    
+    board[output_size:, :output_size]                    = identity_mask_pred
+    board[output_size:, output_size:(output_size*2)]     = class_mask_pred
+    board[output_size:, (output_size*2):(output_size*3)] = prev_identity_mask_pred
+    board[output_size:, (output_size*3):(output_size*4)] = class_mask_prev_pred
+    board[output_size:, (output_size*4):(output_size*5)] = optical_flow_pred
+
+
+def embedding_to_instance(embedding, class_mask, params):
+    output_size              = params.OUTPUT_SIZE
+    class_num                = params.NUM_CLASSES
+    ETH_mean_shift_threshold = params.ETH_MEAN_SHIFT_THRESHOLD
+
+    class_mask_int = np.argmax(class_mask, axis=-1)
+    cluster_all_class = np.zeros((output_size, output_size*2))
     previous_highest_label = 0
     instance_to_class = []
     for j in range(class_num-1):
-        class_mask_pred_slice = np.zeros((output_size, output_size))
-        class_mask_pred_slice[class_mask_int_pred == j+1] = 1
+        class_mask_slice = np.zeros((output_size, output_size*2))
+        class_mask_slice[class_mask_int == j+1] = 1
         cluster = ETH_mean_shift(
-            embedding_pred, class_mask_pred_slice, threshold=ETH_mean_shift_threshold)
+            data=embedding, 
+            mask=class_mask_slice, 
+            threshold=ETH_mean_shift_threshold)
         instance_to_class += [j+1] * np.max(cluster).astype(np.int)
         cluster[cluster != 0] += previous_highest_label
-        filter_mask = class_mask_pred_slice > 0
-        filter_template = np.zeros((output_size, output_size))
+        filter_mask = class_mask_slice > 0
+        filter_template = np.zeros((output_size, output_size*2))
         filter_template[filter_mask] = 1
         cluster = np.multiply(cluster, filter_template)
         cluster_all_class += cluster
         previous_highest_label = np.max(cluster_all_class)
 
-    visualize(embedding_pred, embedding_dim, output_size, class_mask_int_pred,
-              cluster_all_class, instance_mask_gt, class_num, class_mask_gt, colors, image)
-
-    if task == 'sequence':
-        return embedding_pred
-
-
-def sequence_eval(model, sequence, params):
-    image_info = sequence[0]
-    x, y = prep_half_pair_for_model(image_info, params)
-    emb = single_eval(model, x, y, params)
-    for i in range(1, len(sequence)):
-        prev_image_info, image_info = sequence[i-1:i+1]
-        x, y = prep_pair_for_model(image_info, params, prev_image_info, emb)
-        _, emb = x
-        _ = single_eval(model, x, y, params)
+    return cluster_all_class
