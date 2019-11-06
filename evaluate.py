@@ -149,7 +149,7 @@ def eval_pair(model, pair, params):
     prev_class_mask_gt    = resize_img(prev_class_mask_gt, output_size, output_size)
     identity_mask_gt      = resize_img(identity_mask_gt, output_size, output_size)
     prev_identity_mask_gt = resize_img(prev_identity_mask_gt, output_size, output_size)
-    optical_flow_gt       = resize(optical_flow_gt, [output_size, output_size])
+    optical_flow_gt       = resize_img(optical_flow_gt, output_size, output_size)
 
     combined_class_mask_pred[:, :output_size] = class_mask_pred_int
     combined_class_mask_pred[:, output_size:] = prev_class_mask_pred_int
