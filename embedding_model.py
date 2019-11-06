@@ -40,7 +40,7 @@ def sequence_loss_with_params(params):
         # --instance embedding pred
         instance_emb_flat             = tf.reshape(instance_emb, shape=(-1, embedding_dim))
         prev_instance_emb_flat        = tf.reshape(prev_instance_emb, shape=(-1, embedding_dim))
-        combined_instance_emb_flat     = tf.concat((instance_emb_flat, prev_instance_emb_flat), axis=0)
+        combined_instance_emb_flat    = tf.concat((instance_emb_flat, prev_instance_emb_flat), axis=0)
         # --class mask gt
         class_mask_gt_flat            = K.flatten(class_mask_gt)
         prev_class_mask_gt_flat       = K.flatten(prev_class_mask_gt)
@@ -59,14 +59,16 @@ def sequence_loss_with_params(params):
         combined_class_mask_gt_flat = tf.cast(combined_class_mask_gt_flat, tf.int32)
 
         # one-hot encoding
+        combined_identity_mask_flat -= 1
         combined_identity_mask_flat_one_hot = tf.one_hot(combined_identity_mask_flat, num_cluster)
         conbined_class_mask_gt_flat_one_hot = tf.one_hot(combined_class_mask_gt_flat, class_num)
 
         # ignore background pixels
         non_background_idx                  = tf.greater(combined_identity_mask_flat, -1)
-        combined_instance_emb_flat           = tf.boolean_mask(combined_instance_emb_flat, non_background_idx)
+        combined_instance_emb_flat          = tf.boolean_mask(combined_instance_emb_flat, non_background_idx)
         combined_identity_mask_flat         = tf.boolean_mask(combined_identity_mask_flat, non_background_idx)
         combined_identity_mask_flat_one_hot = tf.boolean_mask(combined_identity_mask_flat_one_hot, non_background_idx)
+        combined_class_mask_gt_flat         = tf.boolean_mask(combined_class_mask_gt_flat, non_background_idx)
 
         # center count
         center_count = tf.reduce_sum(tf.cast(combined_identity_mask_flat_one_hot, dtype=tf.float32), axis=0)
