@@ -8,11 +8,12 @@ def embedding_to_instance(embedding, class_mask, params):
     ETH_mean_shift_threshold = params.ETH_MEAN_SHIFT_THRESHOLD
 
     class_mask_int = np.argmax(class_mask, axis=-1)
-    cluster_all_class = np.zeros((output_size, output_size*2))
+    width, height, _ = embedding.shape
+    cluster_all_class = np.zeros((width, height))
     previous_highest_label = 0
     instance_to_class = []
     for j in range(class_num-1):
-        class_mask_slice = np.zeros((output_size, output_size*2))
+        class_mask_slice = np.zeros((width, height))
         class_mask_slice[class_mask_int == j+1] = 1
         cluster = ETH_mean_shift(
             data=embedding, 
@@ -62,8 +63,8 @@ def ETH_mean_shift(data, mask, threshold=0.5):
     num_pixels = x_shape[0] * x_shape[1]
 
     # flatten data
-    x = np.reshape(x, newshape=(-1, embedding_dim))
-    x_shape_flat = np.array(x.shape)
+    x_flat = np.reshape(x, newshape=(-1, embedding_dim))
+    x_shape_flat = np.array(x_flat.shape)
     foreground_mask = mask > 0
     mask_flat = np.reshape(foreground_mask, [-1])
 
@@ -71,7 +72,7 @@ def ETH_mean_shift(data, mask, threshold=0.5):
     # to reshape them back later
     full_idx = np.array(list(range(num_pixels)))
     foreground_idx = full_idx[mask_flat]
-    foreground_x = np.take(x, foreground_idx, axis=0)
+    foreground_x = np.take(x_flat, foreground_idx, axis=0)
     N = foreground_x.shape[0]
     idx = np.array(list(range(N)))
     idx_pool = np.ones(shape=(N,), dtype=bool)
