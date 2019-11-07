@@ -71,7 +71,7 @@ def sequence_loss_with_params(params):
         combined_class_mask_gt_flat         = tf.boolean_mask(combined_class_mask_gt_flat, non_background_idx)
 
         # center count
-        combined_identity_mask_flat_one_hot = tf.cast(combined_identity_mask_flat_one_hot, dtype=tf.float32)
+        combined_identity_mask_flat_one_hot = tf.cast(combined_identity_mask_flat_one_hot, tf.float32)
         center_count = tf.reduce_sum(combined_identity_mask_flat_one_hot, axis=0)
         # add a small number to avoid division by zero
 
@@ -150,7 +150,12 @@ def sequence_loss_with_params(params):
         semseg_loss = K.mean(K.categorical_crossentropy(
             tf.cast(conbined_class_mask_gt_flat_one_hot, tf.float32), 
             tf.cast(combined_class_mask_pred_flat, tf.float32)))
-        optical_flow_loss = tf.reduce_mean(tf.square(optical_flow_pred - optical_flow_gt))
+        # masked mse for optical loss
+        flow_mask = tf.greater(prev_class_mask_gt, 0)
+        flow_mask = tf.cast(flow_mask, tf.float32)
+        flow_mask = tf.expand_dims(flow_mask, axis = -1)
+        masked_optical_flow_pred = tf.math.multiply(optical_flow_pred, flow_mask)
+        optical_flow_loss = tf.reduce_mean(tf.square(masked_optical_flow_pred - optical_flow_gt))
         loss = instance_emb_sequence_loss + semseg_loss + optical_flow_loss
         loss = tf.reshape(loss, [-1])
 
