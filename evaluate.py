@@ -176,22 +176,22 @@ def eval_pair(model, pair, params):
     embedding_pred_pc             = pc[:, :output_size, :]
     prev_embedding_pred_pc        = pc[:, output_size:, :]
 
-    board[:output_size, :output_size]                    = identity_mask_gt_color
-    board[:output_size, output_size:(output_size*2)]     = class_mask_gt_color
-    board[:output_size, (output_size*2):(output_size*3)] = prev_identity_mask_gt_color
-    board[:output_size, (output_size*3):(output_size*4)] = prev_class_mask_gt_color
+    board[:output_size, :output_size]                    = prev_identity_mask_gt_color
+    board[:output_size, output_size:(output_size*2)]     = prev_class_mask_gt_color
+    board[:output_size, (output_size*2):(output_size*3)] = identity_mask_gt_color
+    board[:output_size, (output_size*3):(output_size*4)] = class_mask_gt_color
     board[:output_size, (output_size*4):(output_size*5)] = optical_flow_gt_color
     
-    board[output_size:, :output_size]                    = identity_mask_pred_color
-    board[output_size:, output_size:(output_size*2)]     = class_mask_pred_color
-    board[output_size:, (output_size*2):(output_size*3)] = prev_identity_mask_pred_color
-    board[output_size:, (output_size*3):(output_size*4)] = prev_class_mask_pred_color
+    board[output_size:, :output_size]                    = prev_identity_mask_pred_color
+    board[output_size:, output_size:(output_size*2)]     = prev_class_mask_pred_color
+    board[output_size:, (output_size*2):(output_size*3)] = identity_mask_pred_color
+    board[output_size:, (output_size*3):(output_size*4)] = class_mask_pred_color
     board[output_size:, (output_size*4):(output_size*5)] = optical_flow_pred_color
 
-    board[:output_size, (output_size*5):(output_size*6)] = embedding_pred_pc_masked
-    board[output_size:, (output_size*5):(output_size*6)] = prev_embedding_pred_pc_masked
-    board[:output_size, (output_size*6):(output_size*7)] = embedding_pred_pc
-    board[output_size:, (output_size*6):(output_size*7)] = prev_embedding_pred_pc
+    board[:output_size, (output_size*5):(output_size*6)] = prev_embedding_pred_pc_masked
+    board[output_size:, (output_size*5):(output_size*6)] = prev_embedding_pred_pc
+    board[:output_size, (output_size*6):(output_size*7)] = embedding_pred_pc_masked
+    board[output_size:, (output_size*6):(output_size*7)] = embedding_pred_pc
 
     plt.figure(figsize=(2*2, 2*2))
     plt.imshow(images)
