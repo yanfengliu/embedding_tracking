@@ -153,21 +153,22 @@ def eval_pair(model, pair, params):
     prev_identity_mask_pred = cluster_all_class[:, output_size:]
 
     # colorize for visualization
-    combined_identity_mask_gt       = np.zeros((output_size, output_size*2))
+    combined_identity_mask_gt         = np.zeros((output_size, output_size*2))
     combined_identity_mask_gt[:, :output_size] = identity_mask_gt
     combined_identity_mask_gt[:, output_size:] = prev_identity_mask_gt
-    combined_identity_mask_gt_color = colorize_instances(combined_identity_mask_gt)
-    identity_mask_gt_color          = combined_identity_mask_gt_color[:, :output_size, :]
-    prev_identity_mask_gt_color     = combined_identity_mask_gt_color[:, output_size:, :]
-    class_mask_gt_color             = colorize_class_mask(class_mask_gt_int, class_num)
-    prev_class_mask_gt_color        = colorize_class_mask(prev_class_mask_gt_int, class_num)
-    optical_flow_gt_color           = flow_to_rgb(optical_flow_gt)
+    combined_identity_mask_gt_color   = colorize_instances(combined_identity_mask_gt)
+    identity_mask_gt_color            = combined_identity_mask_gt_color[:, :output_size, :]
+    prev_identity_mask_gt_color       = combined_identity_mask_gt_color[:, output_size:, :]
+    class_mask_gt_color               = colorize_class_mask(class_mask_gt_int, class_num)
+    prev_class_mask_gt_color          = colorize_class_mask(prev_class_mask_gt_int, class_num)
+    optical_flow_gt_color             = flow_to_rgb(optical_flow_gt)
 
-    identity_mask_pred_color        = colorize_instances(identity_mask_pred)
-    prev_identity_mask_pred_color   = colorize_instances(prev_identity_mask_pred)
-    class_mask_pred_color           = colorize_class_mask(class_mask_pred_int, class_num)
-    prev_class_mask_pred_color      = colorize_class_mask(prev_class_mask_pred_int, class_num)
-    optical_flow_pred_color         = flow_to_rgb(optical_flow_pred)
+    combined_identity_mask_pred_color = colorize_instances(cluster_all_class)
+    identity_mask_pred_color          = combined_identity_mask_pred_color[:, :output_size]
+    prev_identity_mask_pred_color     = combined_identity_mask_pred_color[:, output_size:]
+    class_mask_pred_color             = colorize_class_mask(class_mask_pred_int, class_num)
+    prev_class_mask_pred_color        = colorize_class_mask(prev_class_mask_pred_int, class_num)
+    optical_flow_pred_color           = flow_to_rgb(optical_flow_pred)
 
     pc = principal_component_analysis(combined_embedding_pred, embedding_dim)
     show_mask = np.expand_dims(combined_class_mask_gt_int > 0, axis=-1)
