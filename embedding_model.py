@@ -71,20 +71,21 @@ def sequence_loss_with_params(params):
         combined_class_mask_gt_flat         = tf.boolean_mask(combined_class_mask_gt_flat, non_background_idx)
 
         # center count
-        center_count = tf.reduce_sum(tf.cast(combined_identity_mask_flat_one_hot, dtype=tf.float32), axis=0)
+        combined_identity_mask_flat_one_hot = tf.cast(combined_identity_mask_flat_one_hot, dtype=tf.float32)
+        center_count = tf.reduce_sum(combined_identity_mask_flat_one_hot, axis=0)
         # add a small number to avoid division by zero
 
         # variance term
         embedding_sum_by_instance = tf.matmul(
-            tf.transpose(combined_instance_emb_flat), tf.cast(combined_identity_mask_flat_one_hot, dtype=tf.float32))
-        centers = tf.divide(embedding_sum_by_instance, center_count)
+            tf.transpose(combined_instance_emb_flat), combined_identity_mask_flat_one_hot)
+        centers = tf.math.divide_no_nan(embedding_sum_by_instance, center_count)
         gathered_center = tf.gather(centers, combined_identity_mask_flat, axis=1)
         gathered_center_count = tf.gather(center_count, combined_identity_mask_flat)
         combined_emb_t = tf.transpose(combined_instance_emb_flat)
         var_dist = tf.norm(combined_emb_t - gathered_center, ord=1, axis=0) - delta_var
         # changed from soft hinge loss to hard cutoff
         var_dist_pos = tf.square(tf.maximum(var_dist, 0))
-        var_dist_by_instance = tf.divide(var_dist_pos, gathered_center_count)
+        var_dist_by_instance = tf.math.divide_no_nan(var_dist_pos, gathered_center_count)
         num_cluster = tf.cast(num_cluster, tf.float32)
         variance_term = tf.math.divide_no_nan(
             tf.reduce_sum(var_dist_by_instance),
@@ -93,7 +94,6 @@ def sequence_loss_with_params(params):
         # get instance to class mapping
         class_mask_gt = tf.expand_dims(class_mask_gt, axis=-1)
         # multiply classification with one hot flat identity mask
-        combined_identity_mask_flat_one_hot = tf.cast(combined_identity_mask_flat_one_hot, tf.float32)
         combined_class_mask_gt_flat = tf.cast(combined_class_mask_gt_flat, tf.float32)
         combined_class_mask_gt_flat = tf.expand_dims(combined_class_mask_gt_flat, 1)
         filtered_class = tf.multiply(combined_identity_mask_flat_one_hot, combined_class_mask_gt_flat)
@@ -209,14 +209,14 @@ def single_frame_loss_with_params(params):
             # variance term
             embedding_sum_by_instance = tf.matmul(
                 tf.transpose(instance_emb_flat), tf.cast(instance_mask_one_hot_flat, dtype=tf.float32))
-            centers = tf.divide(embedding_sum_by_instance, center_count)
+            centers = tf.math.divide_no_nan(embedding_sum_by_instance, center_count)
             gathered_center = tf.gather(centers, instance_mask_flat, axis=1)
             gathered_center_count = tf.gather(center_count, instance_mask_flat)
             combined_emb_t = tf.transpose(instance_emb_flat)
             var_dist = tf.norm(combined_emb_t - gathered_center, ord=1, axis=0) - delta_var
             # changed from soft hinge loss to hard cutoff
             var_dist_pos = tf.square(tf.maximum(var_dist, 0))
-            var_dist_by_instance = tf.divide(var_dist_pos, gathered_center_count)
+            var_dist_by_instance = tf.math.divide_no_nan(var_dist_pos, gathered_center_count)
             variance_term = tf.math.divide_no_nan(
                 tf.reduce_sum(var_dist_by_instance),
                 tf.cast(num_cluster, tf.float32))
