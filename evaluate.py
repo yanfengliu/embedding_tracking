@@ -176,6 +176,7 @@ def eval_pair(model, pair, params):
     embedding_pred_pc             = pc[:, :output_size, :]
     prev_embedding_pred_pc        = pc[:, output_size:, :]
 
+    # fill the display board
     board[:output_size, :output_size]                    = prev_identity_mask_gt_color
     board[:output_size, output_size:(output_size*2)]     = prev_class_mask_gt_color
     board[:output_size, (output_size*2):(output_size*3)] = identity_mask_gt_color

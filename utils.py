@@ -132,48 +132,6 @@ def prep_double_frame(image_info, prev_image_info, params):
     return x, y
 
 
-def prep_half_pair(image_info, params):
-    img_size      = params.IMG_SIZE
-    embedding_dim = params.EMBEDDING_DIM
-    output_size   = params.OUTPUT_SIZE
-
-    image         = prep_image(image_info)
-    class_mask    = prep_class_mask(image_info, params)
-    instance_mask = prep_instance_mask(image_info, params)
-
-    empty_prev_emb           = np.zeros((1, img_size, img_size, embedding_dim))
-    empty_prev_img           = np.zeros((1, img_size, img_size, 3))
-    empty_prev_instance_mask = np.zeros((1, output_size, output_size, 1))
-    empty_identity_mask      = np.zeros((1, output_size, output_size, 1))
-    empty_prev_identity_mask = np.zeros((1, output_size, output_size, 1))
-    empty_optical_flow       = np.zeros((1, output_size, output_size, 2))
-
-    x = np.concatenate((image, empty_prev_img, empty_prev_emb), axis = -1)
-    y = np.concatenate((class_mask, instance_mask, empty_prev_instance_mask, 
-        empty_identity_mask, empty_prev_identity_mask, empty_optical_flow), axis = -1)
-    
-    return x, y
-
-
-def prep_pair(image_info, prev_image_info, prev_emb, params):
-    image              = prep_image(image_info)
-    prev_image         = prep_image(prev_image_info)
-    prev_emb           = prep_embedding(prev_emb, params)
-
-    class_mask         = prep_class_mask(image_info, params)
-    instance_mask      = prep_instance_mask(image_info, params)
-    prev_instance_mask = prep_instance_mask(prev_image_info, params)
-    identity           = prep_identity_mask(image_info, params)
-    prev_identity      = prep_identity_mask(prev_image_info, params)
-    optical_flow       = prep_optical_flow(prev_image_info, params)
-
-    x = np.concatenate((image, prev_image, prev_emb), axis = -1)
-    y = np.concatenate((class_mask, instance_mask, prev_instance_mask, 
-        identity, prev_identity, optical_flow), axis = -1)
-
-    return x, y
-
-
 def totuple(a):
     """
     Convert a numpy array to a tuple of tuples in the format of [(), (), ...]
