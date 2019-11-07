@@ -174,19 +174,6 @@ def prep_pair(image_info, prev_image_info, prev_emb, params):
     return x, y
 
 
-def get_masked_emb(emb, all_instances):
-    embedding_dim = emb.shape[-1]
-    num_clusters = int(np.max(np.unique(all_instances)))
-    centers = np.zeros((num_clusters, embedding_dim))
-    for i in range(num_clusters):
-        masked_emb = emb[all_instances == i]
-        num_pixel = np.sum(all_instances == i)
-        masked_emb = np.reshape(masked_emb, [num_pixel, embedding_dim])
-        avg_emb = np.mean(masked_emb, axis = 0)
-        centers[i, :] = avg_emb
-    return centers
-
-
 def totuple(a):
     """
     Convert a numpy array to a tuple of tuples in the format of [(), (), ...]
