@@ -2,12 +2,11 @@ import numpy as np
 import time
 
 
-def embedding_to_instance(embedding, class_mask, params):
+def embedding_to_instance(embedding, class_mask_int, params):
     output_size              = params.OUTPUT_SIZE
     class_num                = params.NUM_CLASSES
     ETH_mean_shift_threshold = params.ETH_MEAN_SHIFT_THRESHOLD
 
-    class_mask_int = np.argmax(class_mask, axis=-1)
     width, height, _ = embedding.shape
     cluster_all_class = np.zeros((width, height))
     previous_highest_label = 0

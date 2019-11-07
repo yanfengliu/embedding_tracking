@@ -149,8 +149,6 @@ def eval_pair(model, pair, params):
     combined_embedding_pred[:, output_size:, :]    = prev_embedding_pred
 
     cluster_all_class = embedding_to_instance(combined_embedding_pred, combined_class_mask_pred_int, params)
-    identity_mask_pred      = cluster_all_class[:, :output_size]
-    prev_identity_mask_pred = cluster_all_class[:, output_size:]
 
     # colorize for visualization
     combined_identity_mask_gt         = np.zeros((output_size, output_size*2))
