@@ -242,26 +242,20 @@ def flow_to_rgb(flow):
     direction_hsv = np.zeros((image_size, image_size, 3))
     dx = flow[:, :, 0]
     dy = flow[:, :, 1]
-    vmap = np.logical_or(dx != 0, dy != 0)
-    vx = dx[vmap]
-    vy = dy[vmap]
     # define min and max
     mag_max = np.sqrt(2)
     mag_min = 0
     angle_max = np.pi
     angle_min = -np.pi
-    angles = np.arctan2(vx, vy)
-    magnitudes = np.sqrt(np.power(vx, 2) + np.power(vy, 2))
+    angles = np.arctan2(dx, dy)
+    magnitudes = np.sqrt(np.power(dx, 2) + np.power(dy, 2))
     # convert to hsv
     hue = normalize(angles, [angle_min, angle_max])
     saturation = normalize(magnitudes, [mag_min, mag_max])
     value = np.zeros(angles.shape) + 1
-    H = direction_hsv[:, :, 0]
-    S = direction_hsv[:, :, 1]
-    V = direction_hsv[:, :, 2]
-    H[vmap] = hue
-    S[vmap] = saturation
-    V[vmap] = value
+    direction_hsv[:, :, 0] = hue
+    direction_hsv[:, :, 1] = saturation
+    direction_hsv[:, :, 2] = value
     direction_rgb = matplotlib.colors.hsv_to_rgb(direction_hsv)
     return direction_rgb
 
