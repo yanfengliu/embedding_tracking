@@ -127,8 +127,12 @@ def prep_double_frame(image_info, prev_image_info, params):
     optical_flow = prep_optical_flow(prev_image_info, params)
 
     x = np.concatenate((image, prev_image), axis = -1)
-    y = np.concatenate((class_mask, prev_class_mask, 
-        identity_mask, prev_identity_mask, optical_flow), axis = -1)
+    y = np.concatenate((
+        class_mask, 
+        prev_class_mask, 
+        identity_mask, 
+        prev_identity_mask, 
+        optical_flow), axis = -1)
     return x, y
 
 

@@ -101,7 +101,7 @@ def eval_pair(model, pair, params):
 
     images = np.zeros((image_size, image_size*2, 3))
     board = np.zeros((output_size*2, output_size*7, 3))
-    image_info, prev_image_info = pair
+    prev_image_info, image_info = pair
 
     image                  = image_info['image']
     identity_mask_gt       = image_info['identity_mask']
@@ -112,8 +112,8 @@ def eval_pair(model, pair, params):
     prev_class_mask_gt_int = prev_image_info['class_mask']
     optical_flow_gt        = prev_image_info['optical_flow']
 
-    images[:, :image_size, :] = image
-    images[:, image_size:, :] = prev_image
+    images[:, :image_size, :] = prev_image
+    images[:, image_size:, :] = image
 
     x, y = prep_double_frame(image_info, prev_image_info, params)
     outputs = model.predict(x)
