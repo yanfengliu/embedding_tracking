@@ -86,7 +86,9 @@ def sequence_loss_with_params(params):
         var_dist_pos = tf.square(tf.maximum(var_dist, 0))
         var_dist_by_instance = tf.divide(var_dist_pos, gathered_center_count)
         num_cluster = tf.cast(num_cluster, tf.float32)
-        variance_term = tf.reduce_sum(var_dist_by_instance) / num_cluster
+        variance_term = tf.math.divide_no_nan(
+            tf.reduce_sum(var_dist_by_instance),
+            tf.cast(num_cluster, tf.float32))
 
         # get instance to class mapping
         class_mask_gt = tf.expand_dims(class_mask_gt, axis=-1)
@@ -116,8 +118,9 @@ def sequence_loss_with_params(params):
             sampled_dist = tf.boolean_mask(dist_matrix, idx2)
             distance_term = tf.square(tf.maximum(
                 2 * delta_d - tf.norm(sampled_dist, ord=1, axis=1), 0))
-            distance_term = tf.reduce_sum(
-                distance_term) / tf.cast(num_cluster_by_class * (num_cluster_by_class - 1) + 1, tf.float32)
+            total_cluster_pair = num_cluster_by_class * (num_cluster_by_class - 1) + 1
+            total_cluster_pair = tf.cast(total_cluster_pair, tf.float32)
+            distance_term = tf.math.divide_no_nan(tf.reduce_sum(distance_term), total_cluster_pair)
             return distance_term
 
 
@@ -214,7 +217,9 @@ def single_frame_loss_with_params(params):
             # changed from soft hinge loss to hard cutoff
             var_dist_pos = tf.square(tf.maximum(var_dist, 0))
             var_dist_by_instance = tf.divide(var_dist_pos, gathered_center_count)
-            variance_term = tf.reduce_sum(var_dist_by_instance) / tf.cast(num_cluster, tf.float32)
+            variance_term = tf.math.divide_no_nan(
+                tf.reduce_sum(var_dist_by_instance),
+                tf.cast(num_cluster, tf.float32))
 
             # get instance to class mapping
             class_mask = tf.expand_dims(class_mask, axis=-1)
@@ -239,8 +244,9 @@ def single_frame_loss_with_params(params):
                 sampled_dist = tf.boolean_mask(dist_matrix, idx2)
                 distance_term = tf.square(tf.maximum(
                     2 * delta_d - tf.norm(sampled_dist, ord=1, axis=1), 0))
-                distance_term = tf.reduce_sum(
-                    distance_term) / tf.cast(num_cluster_by_class * (num_cluster_by_class - 1) + 1, tf.float32)
+                total_cluster_pair = num_cluster_by_class * (num_cluster_by_class - 1) + 1
+                total_cluster_pair = tf.cast(total_cluster_pair, tf.float32)
+                distance_term = tf.math.divide_no_nan(tf.reduce_sum(distance_term), total_cluster_pair)
                 return distance_term
 
 
