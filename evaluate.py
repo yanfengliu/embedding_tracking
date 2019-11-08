@@ -115,7 +115,7 @@ def eval_pair(model, pair, params):
     images[:, :image_size, :] = prev_image
     images[:, image_size:, :] = image
 
-    x, y = prep_double_frame(image_info, prev_image_info, params)
+    x, _ = prep_double_frame(image_info, prev_image_info, params)
     outputs = model.predict(x)
     outputs = np.squeeze(outputs)
 

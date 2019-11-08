@@ -23,7 +23,7 @@ def sequence_loss_with_params(params):
         prev_class_mask_gt = y_true[:, :, :, 1]
         identity_mask      = y_true[:, :, :, 2]
         prev_identity_mask = y_true[:, :, :, 3]
-        optical_flow_gt    = y_true[:, :, :, 4:5]
+        optical_flow_gt    = y_true[:, :, :, 4:6]
 
         # y_pred
         class_mask_pred      = y_pred[:, :, :, :class_num]
