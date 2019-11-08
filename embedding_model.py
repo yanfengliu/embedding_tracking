@@ -156,7 +156,7 @@ def sequence_loss_with_params(params):
         flow_mask = tf.expand_dims(flow_mask, axis = -1)
         masked_optical_flow_pred = tf.math.multiply(optical_flow_pred, flow_mask)
         optical_flow_loss = tf.reduce_mean(tf.square(masked_optical_flow_pred - optical_flow_gt))
-        loss = instance_emb_sequence_loss + semseg_loss + optical_flow_loss
+        loss = instance_emb_sequence_loss + semseg_loss + 5 * optical_flow_loss
         loss = tf.reshape(loss, [-1])
 
         return loss
