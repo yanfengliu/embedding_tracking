@@ -20,6 +20,88 @@ def principal_component_analysis(embedding_pred, embedding_dim):
     return pc
 
 
+def flow_to_rgb(flow):
+    # read nonzero optical flow
+    image_size = flow.shape[0]
+    direction_hsv = np.zeros((image_size, image_size, 3))
+    dx = flow[:, :, 0]
+    dy = flow[:, :, 1]
+    # define min and max
+    mag_max = np.sqrt(2)
+    mag_min = 0
+    angle_max = np.pi
+    angle_min = -np.pi
+    angles = np.arctan2(dx, dy)
+    magnitudes = np.sqrt(np.power(dx, 2) + np.power(dy, 2))
+    # convert to hsv
+    hue = normalize(angles, [angle_min, angle_max])
+    saturation = normalize(magnitudes, [mag_min, mag_max])
+    value = np.zeros(angles.shape) + 1
+    direction_hsv[:, :, 0] = hue
+    direction_hsv[:, :, 1] = saturation
+    direction_hsv[:, :, 2] = value
+    direction_rgb = matplotlib.colors.hsv_to_rgb(direction_hsv)
+    return direction_rgb
+
+
+def imgs_to_video(images, video_name, fps):
+    # assumes `images` contains square images in shape of (x, x, 3)
+    height, width = images[0].shape[0:2]
+    video = cv2.VideoWriter(video_name, 0, fps, (width, height))
+    for image in images:
+        video.write(image)
+    video.release()
+    return
+
+
+def flows_to_video(flows, video_name, fps):
+    # assumes `flows` contains square images in shape of (x, x, 2)
+    images = []
+    for flow in flows:
+        image = flow_to_rgb(flow)
+        image = image * 255
+        image = image.astype(np.uint8)
+        images.append(image)
+    imgs_to_video(images, video_name, fps)
+    return
+
+
+def float_to_uint8(data):
+    data = data * 255
+    data = data.astype(np.uint8)
+    return data
+
+
+def pair_embedding_to_video(sequence, model, params, video_name, fps):
+    class_num     = params.NUM_CLASSES
+    embedding_dim = params.EMBEDDING_DIM
+    image_size    = params.IMG_SIZE
+    output_size   = params.OUTPUT_SIZE
+    boards = []
+    for i in range(len(sequence) - 1):
+        image = sequence[i]['image']
+        image_2 = sequence[i+1]['image']
+        board = np.zeros((image_size * 2, image_size * 2, 3))
+        x, _ = prep_double_frame(sequence[i+1], sequence[i], params)
+        outputs = model.predict(x)
+        outputs = np.squeeze(outputs)
+        embedding_pred = outputs[:, :, (class_num*2):(class_num*2 + embedding_dim)]
+        prev_embedding_pred = outputs[:, :, (class_num*2 + embedding_dim):((class_num*2 + embedding_dim*2))]
+        combined_embedding_pred = np.zeros((output_size, output_size*2, embedding_dim))
+        combined_embedding_pred[:, :output_size, :] = prev_embedding_pred
+        combined_embedding_pred[:, output_size:, :] = embedding_pred
+        board[:image_size, :image_size, :] = image_2
+        board[:image_size, image_size:, :] = image
+        pc = principal_component_analysis(combined_embedding_pred, embedding_dim)
+        pc = resize_img(pc, image_size, image_size*2)
+        board[image_size:, image_size:, :] = pc[:, image_size:, :]
+        board[image_size:, :image_size, :] = pc[:, :image_size, :]
+        board = float_to_uint8(board)
+        boards.append(board)
+    imgs_to_video(boards, video_name, fps)
+    return
+
+
 def colorize_instances(instance_masks):
     # show instance mask and predicted embeddings
     width, height = instance_masks.shape
