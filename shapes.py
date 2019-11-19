@@ -14,13 +14,13 @@ int_to_shape = {
 }
 
 
-def get_transform_params(shape_size):
+def get_transform_params(image_size):
     angle = np.random.randint(0, 360)
     theta = (np.pi / 180.0) * angle
     R = np.array([[np.cos(theta), -np.sin(theta)],
                   [np.sin(theta), np.cos(theta)]])
-    x_shift = np.round((np.random.rand() * 0.8 + 0.1) * shape_size)
-    y_shift = np.round((np.random.rand() * 0.8 + 0.1) * shape_size)
+    x_shift = np.round((np.random.rand() * 0.8 + 0.1) * image_size)
+    y_shift = np.round((np.random.rand() * 0.8 + 0.1) * image_size)
     offset = np.array([x_shift, y_shift])
     return R, offset
 
@@ -68,16 +68,16 @@ def get_square_corners(shape_size):
     return corners
 
 
-def get_shape(shape_choice_int, shape_size, identity):
+def get_shape(shape_choice_int, image_size, shape_size, identity):
     shape_info = {}
+    shape_info['image_size'] = image_size
     shape_info['shape_size'] = shape_size
     shape_info['identity'] = identity
-    shape_info['scale_factor'] = 1.0
     shape_choice_str = int_to_shape[shape_choice_int]
     shape_info['shape_choice_int'] = shape_choice_int
     shape_info['shape_choice_str'] = shape_choice_str
 
-    R, offset = get_transform_params(shape_size)
+    R, offset = get_transform_params(image_size)
     x_shift, y_shift = offset
     shape_info['offset'] = offset
     shape_info['rotation'] = R
@@ -110,11 +110,12 @@ def get_shape(shape_choice_int, shape_size, identity):
     return shape_info
 
 
-def get_shapes(shape_types, shape_size):
+def get_shapes(shape_types, image_size, shape_sizes):
     shapes_info = []
     identity = 1
-    for shape_choice_int in shape_types:
-        shape_info = get_shape(shape_choice_int, shape_size, identity)
+    for i in range(len(shape_types)):
+        shape_choice_int = shape_types[i]
+        shape_info = get_shape(shape_choice_int, image_size, shape_sizes[i], identity)
         shapes_info.append(shape_info)
         identity += 1
 
@@ -132,9 +133,8 @@ def round_corners(draw_img, shape_tuple, line_width):
 
 
 def draw_shapes(shape_info, draws, counter):
-    shape_size       = shape_info['shape_size']
+    image_size       = shape_info['image_size']
     identity         = shape_info['identity']
-    scale_factor     = shape_info['scale_factor']
     x_shift, y_shift = shape_info['offset']
     shape_choice_int = shape_info['shape_choice_int']
 
@@ -143,10 +143,7 @@ def draw_shapes(shape_info, draws, counter):
     draw_class_mask  = draws['draw_class_mask']
     draw_identity    = draws['draw_identity']
 
-    # adjust shape sizes by the scale factor
-    shape_size *= scale_factor
-
-    line_width = int(0.01 * shape_size)
+    line_width = int(0.01 * image_size)
 
     if (shape_info['type'] == 'round'):
         x0 = x_shift
@@ -244,12 +241,12 @@ def get_image_from_shapes(shapes, image_size):
 
 
 def draw_flow(shape_info, draw):
-    shape_size       = shape_info['shape_size']
+    image_size       = shape_info['image_size']
     x_shift, y_shift = shape_info['offset']
     dx, dy           = shape_info['velocity']
     # add 100 to velocities to bypass the positive value constraint for draw
     velocity = (100 + dx, 100 + dy, 0)
-    line_width = int(0.01 * shape_size)
+    line_width = int(0.01 * image_size)
 
     if (shape_info['type'] == 'round'):
         x0 = x_shift

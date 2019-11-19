@@ -10,16 +10,20 @@ from utils import consecutive_integer, totuple
 
 
 class ShapeDataGenerator:
-    def __init__(self, num_shape, image_size):
+    def __init__(self, num_shape, image_size, shape_sizes=None):
         self.num_shape = num_shape
         self.image_size = image_size
+        if shape_sizes is None:
+            self.shape_sizes = np.ones(shape=(num_shape, ))
+        else:
+            self.shape_sizes = shape_sizes
         self.shapes = None
 
     def init_shapes(self):
         shape_choices = [1, 2, 3]
         shape_types = np.random.choice(
             shape_choices, size=(self.num_shape), replace=True)
-        self.shapes = get_shapes(shape_types, self.image_size)
+        self.shapes = get_shapes(shape_types, self.image_size, self.shape_sizes)
     
     def render_frame(self):
         image_info = get_image_from_shapes(self.shapes, self.image_size)
@@ -37,8 +41,12 @@ class ImageDataGenerator(ShapeDataGenerator):
 
 
 class SequenceDataGenerator(ShapeDataGenerator):
-    def __init__(self, num_shape, image_size, sequence_len):
-        ShapeDataGenerator.__init__(self, num_shape, image_size)
+    def __init__(self, num_shape, image_size, sequence_len, random_size=False):
+        if random_size:
+            shape_sizes = np.random.rand(num_shape) * 0.2 + 0.8
+        else:
+            shape_sizes = np.ones(shape=(num_shape, ))
+        ShapeDataGenerator.__init__(self, num_shape, image_size, shape_sizes)
         self.sequence_len = sequence_len
         self.shapes = None
 
