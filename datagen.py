@@ -112,7 +112,7 @@ class SequenceDataGenerator(ShapeDataGenerator):
             self.move()
             image_info = self.render_frame()
             flow = self.render_flow()
-            image_info['optical_flow'] = flow
+            image_info['optical_flow'] = flow.astype(np.float32)
             sequence.append(image_info)
             self.bounce()
         return sequence

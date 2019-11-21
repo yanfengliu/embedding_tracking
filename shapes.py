@@ -195,6 +195,8 @@ def draw_ellipse(draw, bbox, linewidth, image_or_mask, mask_value=None):
 
 
 def get_image_from_shapes(shapes, image_size):
+    output_size = image_size // 4
+
     img           = Image.new(mode='RGB', size=(image_size, image_size), color=(255, 255, 255))
     mask          = Image.new(mode='I',   size=(image_size, image_size), color=0)
     full_mask     = Image.new(mode='I',   size=(image_size, image_size), color=0)
@@ -218,7 +220,6 @@ def get_image_from_shapes(shapes, image_size):
         'draw_class_mask': draw_class_mask
     }
     
-    counter = 1
     num_shapes = len(shapes)
     instance_to_class = np.zeros(shape=(num_shapes+1))
     velocities = np.zeros((num_shapes, 2))
@@ -229,27 +230,26 @@ def get_image_from_shapes(shapes, image_size):
         full_mask = Image.new(mode='I', size=(image_size, image_size), color=0)
         draw_full_mask = ImageDraw.Draw(full_mask)
         draws['draw_full_mask'] = draw_full_mask
-        draws = draw_shapes(shape_info, draws, counter)
+        draws = draw_shapes(shape_info, draws, i+1)
         full_masks_list.append(full_mask)
         instance_to_class[i+1] = shape_info['shape_choice_int']
-        counter = counter + 1
 
     image = np.asarray(img) / 255.0
     mask = np.asarray(mask)
     class_mask = np.asarray(class_mask)
-    num_layer = len(np.unique(mask))
-    stacked_full_masks = np.zeros((image_size, image_size, num_layer))
+    stacked_full_masks = np.zeros((image_size, image_size, num_shapes+1))
     full_masks = []
-    for i in range(num_layer):
-        full_mask = np.asarray(full_masks_list[i])
+    for i in range(num_shapes+1):
+        full_mask = np.asarray(full_masks_list[i], dtype=np.uint8)
         stacked_full_masks[:, :, i] = full_mask
         if i > 0:
+            full_mask = utils.resize_img(full_mask, output_size, output_size)
             full_masks.append(full_mask)
     mask_count = np.sum(stacked_full_masks, axis=2)
     occ_mask = np.zeros((image_size, image_size))
     update_idx = (mask_count >= 3)
     obj_idx_array = stacked_full_masks[update_idx]
-    obj_idx_pool = np.linspace(0, num_layer-1, num_layer)
+    obj_idx_pool = np.linspace(0, num_shapes, num_shapes+1)
     obj_idx = np.multiply(obj_idx_pool, (obj_idx_array).astype(int))
     num_update_pixels = obj_idx.shape[0]
     obj_unique_idx = np.zeros((num_update_pixels, 1))
@@ -257,7 +257,7 @@ def get_image_from_shapes(shapes, image_size):
         obj_unique_idx[i] = np.unique(obj_idx[i, :])[-2]
     occ_mask[update_idx] = np.squeeze(obj_unique_idx)
     occ_class_mask = np.zeros_like(class_mask)
-    for i in range(num_layer):
+    for i in range(num_shapes+1):
         occ_class_mask[occ_mask == i] = instance_to_class[i]
 
     classes = [shape_info['shape_choice_int'] for shape_info in shapes]
@@ -273,6 +273,19 @@ def get_image_from_shapes(shapes, image_size):
         height = (rmax - rmin) / image_size
         bbox = [x_center, y_center, width, height]
         bboxes.append(bbox)
+    
+    # cast to data-efficient type
+    image           = image.astype(np.uint8)
+    mask            = mask.astype(np.uint8)
+    occ_mask        = occ_mask.astype(np.uint8)
+    class_mask      = class_mask.astype(np.uint8)
+    occ_class_mask  = occ_class_mask.astype(np.uint8)
+
+    # resize before saving
+    mask            = utils.resize_img(mask, output_size, output_size)
+    occ_mask        = utils.resize_img(occ_mask, output_size, output_size)
+    class_mask      = utils.resize_img(class_mask, output_size, output_size)
+    occ_class_mask  = utils.resize_img(occ_class_mask, output_size, output_size)
 
     image_info = {
         'image':                image,
@@ -325,4 +338,6 @@ def get_flow_from_shapes(shapes_info, image_size):
     flow[flow != 0] -= 100
     max_v = int(0.1 * image_size)
     flow = flow / max_v
+    output_size = image_size // 4
+    flow = utils.resize_img(flow, output_size, output_size)
     return flow
