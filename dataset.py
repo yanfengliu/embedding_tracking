@@ -30,7 +30,8 @@ class SequenceDataset():
                 # [class] [identity] [x_center] [y_center] [width] [height]
                 for j in range(len(info['classes'])):
                     class_int = info['classes'][j]
-                    identity = j+1
+                    # for "towards real-time MOT" identity is from 0 to num_identities-1
+                    identity = j
                     x_center, y_center, width, height = info['bboxes'][j]
                     ann = f'{class_int} {identity} {x_center} {y_center} {width} {height}\n'
                     label_txt.write(ann)
