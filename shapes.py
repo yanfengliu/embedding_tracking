@@ -260,7 +260,6 @@ def get_image_from_shapes(shapes, image_size):
     for i in range(num_layer):
         occ_class_mask[occ_mask == i] = instance_to_class[i]
 
-    identities = [shape_info['identity'] for shape_info in shapes]
     classes = [shape_info['shape_choice_int'] for shape_info in shapes]
     # NOTE: The values of [x_center] [y_center] [width] [height] 
     # are normalized by the width/height of the image, so they are 
