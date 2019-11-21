@@ -2,3 +2,7 @@
 *.pyc
 *.h5
 *.avi
+.vscode/settings.json
+*.png
+*.txt
+.vscode/settings.json

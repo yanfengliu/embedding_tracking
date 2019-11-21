@@ -1,3 +1,4 @@
+import os
 import sys
 
 import cv2
@@ -33,13 +34,14 @@ def consecutive_integer(mask):
     if (0 not in np.unique(mask)):
         mask[0, 0] = 0
     mask_values = np.unique(mask)
+    change_log = np.zeros(shape=(len(mask_values)))
     counter = 0
-    # this works because np.unique() sorts in ascending order
     for value in mask_values:
         mask_buffer[mask == value] = counter
+        change_log[counter] = value
         counter += 1
     mask = mask_buffer.astype(int)
-    return mask
+    return mask, change_log
 
 
 def prep_image(image_info):
@@ -195,4 +197,21 @@ def update_progress(progress, text=""):
         sys.stdout.write("\r Progress: [{0}] {1:.1f}% {2}".format(
             "#" * block + "-" * (bar_length - block), progress * 100, text))
         sys.stdout.flush()
+
+
+def mkdir_if_missing(d):
+    if not os.path.exists(d):
+        os.makedirs(d)
+
+
+def mask2bbox(mask):
+    if not np.any(mask):
+        plt.figure()
+        plt.imshow(mask)
+        plt.show()
+    rows = np.any(mask, axis=1)
+    cols = np.any(mask, axis=0)
+    rmin, rmax = np.where(rows)[0][[0, -1]]
+    cmin, cmax = np.where(cols)[0][[0, -1]]
+    return rmin, rmax, cmin, cmax
 

@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
-from utils import consecutive_integer, totuple
+import utils
 
 int_to_shape = {
     1: "circle",
@@ -134,14 +134,13 @@ def round_corners(draw_img, shape_tuple, line_width):
 
 def draw_shapes(shape_info, draws, counter):
     image_size       = shape_info['image_size']
-    identity         = shape_info['identity']
     x_shift, y_shift = shape_info['offset']
     shape_choice_int = shape_info['shape_choice_int']
 
     draw_img         = draws['draw_img']
     draw_mask        = draws['draw_mask']
     draw_class_mask  = draws['draw_class_mask']
-    draw_identity    = draws['draw_identity']
+    draw_full_mask   = draws['draw_full_mask']
 
     line_width = int(0.01 * image_size)
 
@@ -158,24 +157,23 @@ def draw_shapes(shape_info, draws, counter):
                      image_or_mask='mask', mask_value=counter)
         draw_ellipse(draw=draw_class_mask, bbox=bbox, linewidth=line_width,
                      image_or_mask='mask', mask_value=int(shape_choice_int))
-        draw_ellipse(draw=draw_identity, bbox=bbox, linewidth=line_width,
-                     image_or_mask='mask', mask_value=int(identity))
+        draw_ellipse(draw=draw_full_mask, bbox=bbox, linewidth=line_width,
+                     image_or_mask='mask', mask_value=1)
     else:
         corners = shape_info['corners']
-        shape_tuple = totuple(corners)
+        shape_tuple = utils.totuple(corners)
         draw_img.polygon(xy=shape_tuple, fill=(255, 255, 255), outline=0)
         draw_img.line(xy=shape_tuple, fill=(0, 0, 0), width=line_width)
         round_corners(draw_img, shape_tuple, line_width)
         draw_mask.polygon(xy=shape_tuple, fill=counter, outline=counter)
         draw_class_mask.polygon(xy=shape_tuple, fill=int(shape_choice_int), 
             outline=int(shape_choice_int))
-        draw_identity.polygon(xy=shape_tuple, fill=int(identity), outline=int(identity))
+        draw_full_mask.polygon(xy=shape_tuple, fill=1, outline=1)
 
     new_draws = {
         'draw_img': draw_img,
         'draw_mask': draw_mask,
-        'draw_class_mask': draw_class_mask,
-        'draw_identity': draw_identity
+        'draw_class_mask': draw_class_mask
     }
 
     return new_draws
@@ -199,42 +197,94 @@ def draw_ellipse(draw, bbox, linewidth, image_or_mask, mask_value=None):
 def get_image_from_shapes(shapes, image_size):
     img           = Image.new(mode='RGB', size=(image_size, image_size), color=(255, 255, 255))
     mask          = Image.new(mode='I',   size=(image_size, image_size), color=0)
+    full_mask     = Image.new(mode='I',   size=(image_size, image_size), color=0)
     class_mask    = Image.new(mode='I',   size=(image_size, image_size), color=0)
-    identity_mask = Image.new(mode='I',   size=(image_size, image_size), color=0)
 
-    draw_img = ImageDraw.Draw(img)
-    draw_mask = ImageDraw.Draw(mask)
+    draw_img        = ImageDraw.Draw(img)
+    draw_mask       = ImageDraw.Draw(mask)
+    draw_full_mask  = ImageDraw.Draw(full_mask)
     draw_class_mask = ImageDraw.Draw(class_mask)
-    draw_identity = ImageDraw.Draw(identity_mask)
+
+    background_all_ones = np.array([
+        (0, 0), (image_size, 0), (image_size, image_size), (0, image_size), (0, 0)])
+    corners = utils.totuple(background_all_ones)
+    draw_full_mask.polygon([tuple(p) for p in corners], fill=1, outline=1)
+    full_masks_list = []
+    full_masks_list.append(full_mask)
 
     draws = {
         'draw_img': draw_img,
         'draw_mask': draw_mask,
-        'draw_class_mask': draw_class_mask,
-        'draw_identity': draw_identity
+        'draw_class_mask': draw_class_mask
     }
-
+    
     counter = 1
-    num = len(shapes)
-    velocities = np.zeros((num, 2))
-    for i in range(num):
+    num_shapes = len(shapes)
+    instance_to_class = np.zeros(shape=(num_shapes+1))
+    velocities = np.zeros((num_shapes, 2))
+    for i in range(num_shapes):
         shape_info = shapes[i]
-        velocities[i, :] = shape_info['velocity']
+        if 'velocity' in shape_info:
+            velocities[i, :] = shape_info['velocity']
+        full_mask = Image.new(mode='I', size=(image_size, image_size), color=0)
+        draw_full_mask = ImageDraw.Draw(full_mask)
+        draws['draw_full_mask'] = draw_full_mask
         draws = draw_shapes(shape_info, draws, counter)
+        full_masks_list.append(full_mask)
+        instance_to_class[i+1] = shape_info['shape_choice_int']
         counter = counter + 1
 
     image = np.asarray(img) / 255.0
     mask = np.asarray(mask)
-    mask = consecutive_integer(mask)
     class_mask = np.asarray(class_mask)
-    identity_mask = np.asarray(identity_mask)
+    num_layer = len(np.unique(mask))
+    stacked_full_masks = np.zeros((image_size, image_size, num_layer))
+    full_masks = []
+    for i in range(num_layer):
+        full_mask = np.asarray(full_masks_list[i])
+        stacked_full_masks[:, :, i] = full_mask
+        if i > 0:
+            full_masks.append(full_mask)
+    mask_count = np.sum(stacked_full_masks, axis=2)
+    occ_mask = np.zeros((image_size, image_size))
+    update_idx = (mask_count >= 3)
+    obj_idx_array = stacked_full_masks[update_idx]
+    obj_idx_pool = np.linspace(0, num_layer-1, num_layer)
+    obj_idx = np.multiply(obj_idx_pool, (obj_idx_array).astype(int))
+    num_update_pixels = obj_idx.shape[0]
+    obj_unique_idx = np.zeros((num_update_pixels, 1))
+    for i in range(num_update_pixels):
+        obj_unique_idx[i] = np.unique(obj_idx[i, :])[-2]
+    occ_mask[update_idx] = np.squeeze(obj_unique_idx)
+    occ_class_mask = np.zeros_like(class_mask)
+    for i in range(num_layer):
+        occ_class_mask[occ_mask == i] = instance_to_class[i]
+
+    identities = [shape_info['identity'] for shape_info in shapes]
+    classes = [shape_info['shape_choice_int'] for shape_info in shapes]
+    # NOTE: The values of [x_center] [y_center] [width] [height] 
+    # are normalized by the width/height of the image, so they are 
+    # float numbers ranging from 0 to 1.
+    bboxes = []
+    for full_mask in full_masks:
+        rmin, rmax, cmin, cmax = utils.mask2bbox(full_mask)
+        x_center = (cmax + cmin) / (2 * image_size)
+        y_center = (rmax + rmin) / (2 * image_size)
+        width = (cmax - cmin) / image_size
+        height = (rmax - rmin) / image_size
+        bbox = [x_center, y_center, width, height]
+        bboxes.append(bbox)
 
     image_info = {
-        'image':         image,
-        'instance_mask': mask,
-        'class_mask':    class_mask,
-        'identity_mask': identity_mask,
-        'velocities':    velocities
+        'image':                image,
+        'instance_mask':        mask,
+        'occ_instance_mask':    occ_mask,
+        'class_mask':           class_mask,
+        'occ_class_mask':       occ_class_mask,
+        'full_masks':           full_masks,
+        'velocities':           velocities,
+        'classes':              classes,
+        'bboxes':               bboxes
     }
 
     return image_info
@@ -258,7 +308,7 @@ def draw_flow(shape_info, draw):
                      image_or_mask='mask', mask_value=velocity)
     else:
         corners = shape_info['corners']
-        shape_tuple = totuple(corners)
+        shape_tuple = utils.totuple(corners)
         draw.polygon(xy=shape_tuple, fill=velocity, outline=velocity)
 
     return draw
