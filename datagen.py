@@ -50,11 +50,6 @@ class SequenceDataGenerator(ShapeDataGenerator):
         self.sequence_len = sequence_len
         self.shapes = None
 
-    def get_scale_factors(self):
-        scale_factors = np.random.rand(self.num_shape, 2) * 0.1 + 0.95
-        for i in range(self.num_shape):
-            self.shapes[i]['scale_factor'] = scale_factors[i]
-
     def get_velocities(self):
         velocities = np.random.randint(
             low=int(-0.1 * self.image_size), high=int(0.1 * self.image_size), size=(self.num_shape, 2))
