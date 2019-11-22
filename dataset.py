@@ -112,3 +112,20 @@ class SequenceDataset():
 class SequenceDataLoader():
     def __init__(self, dataset_path):
         self.dataset_path = dataset_path
+        self.seq_list = os.listdir(self.dataset_path)
+        np.random.shuffle(self.seq_list)
+        self.num_seq = len(self.seq_list)
+        self.current_seq = 0
+    
+    
+    def get_next_sequence(self):
+        seq_name = self.seq_list[self.current_seq]
+        if self.current_seq < self.num_seq:
+            self.current_seq += 1
+        else:
+            self.current_seq = 0
+            np.random.shuffle(self.seq_list)
+        pickle_full_path = os.path.join(self.dataset_path, seq_name)
+        with open(pickle_full_path, 'rb') as handle:
+            sequence = pickle.load(handle)
+        return sequence
