@@ -20,7 +20,7 @@ class Experiment:
         utils.mkdir_if_missing(self.params.MODEL_SAVE_DIR)
         self.model_full_path = os.path.join(
             self.params.MODEL_SAVE_DIR, self.params.MODEL_SAVE_NAME)
-        self.val_sdg = datagen.SequenceDataGenerator(
+        self.val_datagen = datagen.SequenceDataGenerator(
             num_shape = self.params.NUM_SHAPE,
             image_size = self.params.IMG_SIZE,
             sequence_len = self.params.SEQUENCE_LEN,
@@ -46,7 +46,7 @@ class Experiment:
         clear_output(wait=True)
         visual.visualize_history(
             self.loss_history, f'loss, epoch: {self.epoch}, total step: {self.step}')
-        sequence = self.val_sdg.get_sequence()
+        sequence = self.val_datagen.get_sequence()
         pair = sequence[0:2]
         visual.eval_pair(self.model, pair, self.params)
     
