@@ -182,14 +182,17 @@ def mkdir_if_missing(d):
         os.makedirs(d)
 
 
-def mask2bbox(mask):
+def mask2bbox(mask, image_size):
     if not np.any(mask):
-        plt.figure()
-        plt.imshow(mask)
-        plt.show()
+        return None
     rows = np.any(mask, axis=1)
     cols = np.any(mask, axis=0)
     rmin, rmax = np.where(rows)[0][[0, -1]]
     cmin, cmax = np.where(cols)[0][[0, -1]]
-    return rmin, rmax, cmin, cmax
+    x_center = (cmax + cmin) / (2 * image_size)
+    y_center = (rmax + rmin) / (2 * image_size)
+    width = (cmax - cmin) / image_size
+    height = (rmax - rmin) / image_size
+    bbox = [x_center, y_center, width, height]
+    return bbox
 

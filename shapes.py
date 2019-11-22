@@ -2,6 +2,7 @@ import os
 import pickle
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -239,12 +240,19 @@ def get_image_from_shapes(shapes, image_size):
     class_mask = np.asarray(class_mask)
     stacked_full_masks = np.zeros((image_size, image_size, num_shapes+1))
     full_masks = []
+    # NOTE: The values of [x_center] [y_center] [width] [height] 
+    # are normalized by the width/height of the image, so they are 
+    # float numbers ranging from 0 to 1.
+    bboxes = []
     for i in range(num_shapes+1):
         full_mask = np.asarray(full_masks_list[i], dtype=np.uint8)
         stacked_full_masks[:, :, i] = full_mask
         if i > 0:
-            full_mask = utils.resize_img(full_mask, output_size, output_size)
-            full_masks.append(full_mask)
+            bbox = utils.mask2bbox(full_mask, image_size)
+            if bbox:
+                bboxes.append(bbox)
+                full_mask = utils.resize_img(full_mask, output_size, output_size)
+                full_masks.append(full_mask)
     mask_count = np.sum(stacked_full_masks, axis=2)
     occ_mask = np.zeros((image_size, image_size))
     update_idx = (mask_count >= 3)
@@ -261,18 +269,6 @@ def get_image_from_shapes(shapes, image_size):
         occ_class_mask[occ_mask == i] = instance_to_class[i]
 
     classes = [shape_info['shape_choice_int'] for shape_info in shapes]
-    # NOTE: The values of [x_center] [y_center] [width] [height] 
-    # are normalized by the width/height of the image, so they are 
-    # float numbers ranging from 0 to 1.
-    bboxes = []
-    for full_mask in full_masks:
-        rmin, rmax, cmin, cmax = utils.mask2bbox(full_mask)
-        x_center = (cmax + cmin) / (2 * image_size)
-        y_center = (rmax + rmin) / (2 * image_size)
-        width = (cmax - cmin) / image_size
-        height = (rmax - rmin) / image_size
-        bbox = [x_center, y_center, width, height]
-        bboxes.append(bbox)
     
     # cast to data-efficient type
     image           = image.astype(np.uint8)

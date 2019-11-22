@@ -1,3 +1,4 @@
+import json
 import os
 import pickle
 import random
@@ -7,6 +8,56 @@ import numpy as np
 
 import utils
 from datagen import SequenceDataGenerator
+
+
+def fill_image_list(params):
+    r"""
+    Generate *.train and *.test file for training protocol of 
+    "Towards-Realtime-MOT"
+    """
+    shapes_dir = os.path.join('dataset', f'{params.NUM_SHAPE}_shapes')
+    for i in range(params.TRAIN_NUM_SEQ):
+        train_image_list_path = os.path.join(shapes_dir, f'seq_{i}.train')
+        f = open(train_image_list_path, 'w')
+        image_list = os.listdir(f'{shapes_dir}/train/seq_{i}/images')
+        for image_name in image_list:
+            f.write(os.path.join('train', f'seq_{i}', 'images', image_name) + '\n')
+        f.close()
+    for i in range(params.TEST_NUM_SEQ):
+        test_image_list_path = f'{shapes_dir}/seq_{i}.test'
+        f = open(test_image_list_path, 'w')
+        image_list = os.listdir(f'{shapes_dir}/test/seq_{i}/images')
+        for image_name in image_list:
+            f.write(os.path.join('test', f'seq_{i}', 'images', image_name) + '\n')
+        f.close()
+
+
+def gen_ccmcpe(params):
+    r"""
+    Create and fill the ccmcpe.json file to specify sets used for training and testing.
+    Used for "Towards-Realtime-MOT"
+    """
+    ccmcpe = dict()
+    
+    dataset_dir = os.path.join(params.github_dir, 'embedding_tracking', 'dataset')
+    ccmcpe['root'] = os.path.join(dataset_dir, f'{params.NUM_SHAPE}_shapes')
+    # list train sets
+    train_seq_dict = dict()
+    for i in range(params.TRAIN_NUM_SEQ):
+        train_seq_path = os.path.join(dataset_dir, f'{params.NUM_SHAPE}_shapes/seq_{i}.train')
+        train_seq_dict[f'seq_{i}'] = train_seq_path
+    ccmcpe['train'] = train_seq_dict
+    # list test sets
+    test_seq_dict = dict()
+    for i in range(params.TEST_NUM_SEQ):
+        test_seq_path = os.path.join(dataset_dir, f'{params.NUM_SHAPE}_shapes/seq_{i}.test')
+        test_seq_dict[f'seq_{i}'] = test_seq_path
+    ccmcpe['test'] = test_seq_dict
+
+    ccmcpe_json_path = os.path.join(params.github_dir, 'Towards-Realtime-MOT' 'cfg', 'ccmcpe.json')
+    with open(ccmcpe_json_path, 'w') as f:
+        json_str = json.dumps(ccmcpe)
+        f.write(json_str)
 
 
 class SequenceDataset():
@@ -31,7 +82,7 @@ class SequenceDataset():
             image_count = 0
             for info in seq:
                 image = info['image']
-                image_folder_path   = os.path.join(path, f'seq_{i}', 'image')
+                image_folder_path   = os.path.join(path, f'seq_{i}', 'images')
                 label_folder_path   = os.path.join(path, f'seq_{i}', 'labels_with_ids')
                 utils.mkdir_if_missing(image_folder_path)
                 utils.mkdir_if_missing(label_folder_path)
@@ -44,7 +95,8 @@ class SequenceDataset():
                 label_txt = open(label_full_path, 'w')
                 # [class] [identity] [x_center] [y_center] [width] [height]
                 for j in range(len(info['classes'])):
-                    class_int = info['classes'][j]
+                    # class_int = info['classes'][j]
+                    class_int = 0
                     # for "towards real-time MOT" identity is from 0 to num_identities-1
                     identity = j + num_unique_identities
                     x_center, y_center, width, height = info['bboxes'][j]
@@ -55,3 +107,8 @@ class SequenceDataset():
             # increment the total number of unique identities because they should not
             # be mixed up between sequences
             num_unique_identities += num_shape
+
+
+class SequenceDataLoader():
+    def __init__(self, dataset_path):
+        self.dataset_path = dataset_path
