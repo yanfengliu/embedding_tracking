@@ -1,15 +1,17 @@
 import os
 
+import keras
 import motmetrics as mm
 import numpy as np
 from IPython.display import clear_output
 
+import datagen
 import dataset
-import postprocessing as pp
+import embedding_model
+import loss_functions
+import postprocessing
 import utils
 import visual
-from datagen import SequenceDataGenerator
-from embedding_model import SequenceEmbeddingModel, sequence_loss_with_params
 
 
 class Experiment:
@@ -18,7 +20,7 @@ class Experiment:
         utils.mkdir_if_missing(self.params.MODEL_SAVE_DIR)
         self.model_full_path = os.path.join(
             self.params.MODEL_SAVE_DIR, self.params.MODEL_SAVE_NAME)
-        self.val_sdg = SequenceDataGenerator(
+        self.val_sdg = datagen.SequenceDataGenerator(
             num_shape = self.params.NUM_SHAPE,
             image_size = self.params.IMG_SIZE,
             sequence_len = self.params.SEQUENCE_LEN,
@@ -29,9 +31,9 @@ class Experiment:
     
 
     def init_model(self):
-        self.model = SequenceEmbeddingModel(self.params)
-        optim = Adam(lr = params.LEARNING_RATE)
-        loss_function = sequence_loss_with_params(self.params)
+        self.model = embedding_model.SequenceEmbeddingModel(self.params)
+        optim = keras.optimizers.Adam(lr = self.params.LEARNING_RATE)
+        loss_function = loss_functions.sequence_loss_with_params(self.params)
         self.model.compile(optim, loss = loss_function)
     
 
