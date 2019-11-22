@@ -110,8 +110,9 @@ class SequenceDataset():
 
 
 class SequenceDataLoader():
-    def __init__(self, dataset_path):
+    def __init__(self, dataset_path, shuffle=False):
         self.dataset_path = dataset_path
+        self.shuffle = shuffle
         self.seq_list = os.listdir(self.dataset_path)
         np.random.shuffle(self.seq_list)
         self.num_seq = len(self.seq_list)
@@ -124,7 +125,8 @@ class SequenceDataLoader():
             self.current_seq += 1
         else:
             self.current_seq = 0
-            np.random.shuffle(self.seq_list)
+            if self.shuffle:
+                np.random.shuffle(self.seq_list)
         pickle_full_path = os.path.join(self.dataset_path, seq_name)
         with open(pickle_full_path, 'rb') as handle:
             sequence = pickle.load(handle)

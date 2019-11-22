@@ -95,15 +95,15 @@ def prep_single_frame(image_info):
     return x, y
 
 
-def prep_double_frame(image_info, prev_image_info):
-    image              = prep_image(image_info)
-    class_mask         = prep_class_mask(image_info)
-    identity_mask      = prep_identity_mask(image_info)
-
-    prev_image         = prep_image(prev_image_info)
-    prev_class_mask    = prep_class_mask(prev_image_info)
+def prep_double_frame(prev_image_info, image_info):
+    prev_image         = prep_image(        prev_image_info)
+    prev_class_mask    = prep_class_mask(   prev_image_info)
     prev_identity_mask = prep_identity_mask(prev_image_info)
-    optical_flow       = prep_optical_flow(prev_image_info)
+    optical_flow       = prep_optical_flow( prev_image_info)
+
+    image              = prep_image(        image_info)
+    class_mask         = prep_class_mask(   image_info)
+    identity_mask      = prep_identity_mask(image_info)
 
     x = np.concatenate((image, prev_image), axis = -1)
     y = np.concatenate((
