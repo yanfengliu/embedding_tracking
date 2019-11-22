@@ -39,7 +39,7 @@ def gen_ccmcpe(params):
     """
     ccmcpe = dict()
     
-    dataset_dir = os.path.join(params.github_dir, 'embedding_tracking', 'dataset')
+    dataset_dir = os.path.join(params.GITHUB_DIR, 'embedding_tracking', 'dataset')
     ccmcpe['root'] = os.path.join(dataset_dir, f'{params.NUM_SHAPE}_shapes')
     # list train sets
     train_seq_dict = dict()
@@ -54,7 +54,7 @@ def gen_ccmcpe(params):
         test_seq_dict[f'seq_{i}'] = test_seq_path
     ccmcpe['test'] = test_seq_dict
 
-    ccmcpe_json_path = os.path.join(params.github_dir, 'Towards-Realtime-MOT' 'cfg', 'ccmcpe.json')
+    ccmcpe_json_path = os.path.join(params.GITHUB_DIR, 'Towards-Realtime-MOT' 'cfg', 'ccmcpe.json')
     with open(ccmcpe_json_path, 'w') as f:
         json_str = json.dumps(ccmcpe)
         f.write(json_str)
