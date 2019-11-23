@@ -21,42 +21,34 @@ class InferenceModel:
         nC = self.params.NUM_CLASSES
         nD = self.params.EMBEDDING_DIM
         OS = self.params.OUTPUT_SIZE
-
         outputs = self.predict(x)
         outputs = np.squeeze(outputs)
-
-        class_mask_pred             = outputs[:, :, :, (nC * 0):(nC * 1)]
-        occ_class_mask_pred         = outputs[:, :, :, (nC * 1):(nC * 2)]
-        prev_class_mask_pred        = outputs[:, :, :, (nC * 2):(nC * 3)]
-        occ_prev_class_mask_pred    = outputs[:, :, :, (nC * 3):(nC * 4)]
-        embedding_pred              = outputs[:, :, :, (nC * 4 + nD * 0):(nC * 4 + nD * 1)]
-        occ_embedding_pred          = outputs[:, :, :, (nC * 4 + nD * 1):(nC * 4 + nD * 2)]
-        prev_embedding_pred         = outputs[:, :, :, (nC * 4 + nD * 2):(nC * 4 + nD * 3)]
-        occ_prev_embedding_pred     = outputs[:, :, :, (nC * 4 + nD * 3):(nC * 4 + nD * 4)]
-
-        combined_class_mask_pred    = np.zeros((OS, OS*4, nC))
-        combined_embedding_pred     = np.zeros((OS, OS*4, nD))
-
-        # fill in value to the combined visualization
-        combined_class_mask_pred[:, (OS * 0):(OS * 1), :]   = class_mask_pred         
-        combined_class_mask_pred[:, (OS * 1):(OS * 2), :]   = occ_class_mask_pred     
-        combined_class_mask_pred[:, (OS * 2):(OS * 3), :]   = prev_class_mask_pred    
-        combined_class_mask_pred[:, (OS * 3):(OS * 4), :]   = occ_prev_class_mask_pred
-        combined_embedding_pred[:, (OS * 0):(OS * 1), :]    = embedding_pred              
-        combined_embedding_pred[:, (OS * 1):(OS * 2), :]    = occ_embedding_pred          
-        combined_embedding_pred[:, (OS * 2):(OS * 3), :]    = prev_embedding_pred         
-        combined_embedding_pred[:, (OS * 3):(OS * 4), :]    = occ_prev_embedding_pred     
-
+        combined_class_mask_pred = np.zeros((OS, OS*4, nC))
+        combined_embedding_pred  = np.zeros((OS, OS*4, nD))
+        for i in range(4):
+            # channel wise slice copied to horizontal slice
+            combined_class_mask_pred[:, (OS*i):(OS*(i+1)), :] = \
+                outputs[:, :, :, (nC*0):(nC*(i+1))]
+            combined_embedding_pred[:, (OS*i):(OS*(i+1)), :] = \
+                outputs[:, :, :, (nC*4+nD*i):(nC*4+nD*(i+1))]
         combined_class_mask_pred_int = np.argmax(combined_class_mask_pred, axis = -1)
-
         cluster_all_class = postprocessing.embedding_to_instance(
             combined_embedding_pred, 
             combined_class_mask_pred_int, 
             self.params)
-
         return combined_embedding_pred, combined_class_mask_pred_int, cluster_all_class
 
 
     def track(self, x):
         # TODO: use masks to track
+        OS = self.params.OUTPUT_SIZE
+        _, _, cluster_all_class = self.predict(x)
+        num_instance = np.max(cluster_all_class)
+        full_masks = []
+        for i in range(num_instance):
+            cluster_all_class[:, (OS * 0):(OS * 1)]
+            cluster_all_class[:, (OS * 1):(OS * 2)]
+            cluster_all_class[:, (OS * 2):(OS * 3)]
+            cluster_all_class[:, (OS * 3):(OS * 4)]
+
         return None

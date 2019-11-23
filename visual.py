@@ -104,7 +104,6 @@ def pair_embedding_to_video(sequence, model, params, video_name, fps):
 
 
 def colorize_instances(instance_masks):
-    # show instance mask and predicted embeddings
     width, height = instance_masks.shape
     instances_color = np.zeros((width, height, 3))
     
@@ -192,15 +191,7 @@ def eval_pair(model, pair, params):
     combined_embedding_pred, combined_class_mask_pred_int, cluster_all_class = inference_model.segment(x)
 
     image                       = image_info['image']
-    id_mask_gt                  = image_info['instance_mask']
-    occ_id_mask_gt              = image_info['occ_instance_mask']
-    class_mask_gt_int           = image_info['class_mask']
-    occ_class_mask_gt_int       = image_info['occ_class_mask']
     prev_image                  = prev_image_info['image']
-    prev_id_mask_gt             = prev_image_info['instance_mask']
-    occ_prev_id_mask_gt         = prev_image_info['occ_instance_mask']
-    prev_class_mask_gt_int      = prev_image_info['class_mask']
-    occ_prev_class_mask_gt_int  = prev_image_info['occ_class_mask']
     images[:, :image_size, :]   = prev_image
     images[:, image_size:, :]   = image
 
@@ -208,18 +199,18 @@ def eval_pair(model, pair, params):
     combined_id_mask_gt             = np.zeros((OS, OS*4))
 
     # colorize id masks
-    combined_id_mask_gt[:, (OS * 0):(OS * 1)] = id_mask_gt
-    combined_id_mask_gt[:, (OS * 1):(OS * 2)] = occ_id_mask_gt
-    combined_id_mask_gt[:, (OS * 2):(OS * 3)] = prev_id_mask_gt
-    combined_id_mask_gt[:, (OS * 3):(OS * 4)] = occ_prev_id_mask_gt
+    combined_id_mask_gt[:, (OS * 0):(OS * 1)] = image_info['instance_mask']
+    combined_id_mask_gt[:, (OS * 1):(OS * 2)] = image_info['occ_instance_mask']
+    combined_id_mask_gt[:, (OS * 2):(OS * 3)] = prev_image_info['instance_mask']
+    combined_id_mask_gt[:, (OS * 3):(OS * 4)] = prev_image_info['occ_instance_mask']
     combined_id_mask_gt_color   = colorize_instances(combined_id_mask_gt)
     combined_id_mask_pred_color = colorize_instances(cluster_all_class)
-    
+
     # colorize class masks
-    combined_class_mask_gt_int[:, (OS * 0):(OS * 1)] = class_mask_gt_int
-    combined_class_mask_gt_int[:, (OS * 1):(OS * 2)] = occ_class_mask_gt_int
-    combined_class_mask_gt_int[:, (OS * 2):(OS * 3)] = prev_class_mask_gt_int
-    combined_class_mask_gt_int[:, (OS * 3):(OS * 4)] = occ_prev_class_mask_gt_int
+    combined_class_mask_gt_int[:, (OS * 0):(OS * 1)] = image_info['class_mask']
+    combined_class_mask_gt_int[:, (OS * 1):(OS * 2)] = image_info['occ_class_mask']
+    combined_class_mask_gt_int[:, (OS * 2):(OS * 3)] = prev_image_info['class_mask']
+    combined_class_mask_gt_int[:, (OS * 3):(OS * 4)] = prev_image_info['occ_class_mask']
     combined_class_mask_gt_color    = colorize_class_mask(combined_class_mask_gt_int, nC)
     combined_class_mask_pred_color  = colorize_class_mask(combined_class_mask_pred_int, nC)
 
