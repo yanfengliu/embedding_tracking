@@ -174,3 +174,18 @@ def mask2bbox(mask, image_size):
     bbox = [x_center, y_center, width, height]
     return bbox
 
+
+def intersection(mask1, mask2):
+    return np.sum((mask1 > 0) & (mask2 > 0))
+
+
+def union(mask1, mask2):
+    return np.sum((mask1 > 0) | (mask2 > 0))
+
+
+def iou(mask1, mask2):
+    mask1 = np.squeeze(mask1)
+    mask2 = np.squeeze(mask2)
+    i = intersection(mask1, mask2)
+    u = union(mask1, mask2)
+    return i / u

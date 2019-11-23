@@ -76,23 +76,20 @@ class Experiment:
     
     
     def track_on_sequence(self, sequence):
-        tracking_output = []
         for i in range(self.params.SEQUENCE_LEN - 1):
             [prev_image_info, image_info] = sequence[i:i+2]
             x, _ = utils.prep_double_frame(prev_image_info, image_info)
-            tracking = self.inference_model.track(x)
-            tracking_output.append(tracking)
-        return tracking_output
+            self.inference_model.update_track(x)
+        seq_tracks = self.inference_model.get_tracks()
+        return seq_tracks
 
 
     def eval(self):
         self.evaluator = eval.MaskTrackEvaluator(iou_threshold=self.params.IOU_THRESHOLD)
-        self.val_track = []
         for _ in range(self.params.VAL_NUM_SEQ):
             sequence = self.val_data_loader.get_next_sequence()
-            tracking_output = self.track_on_sequence(sequence)
-            self.val_track.append(tracking_output)
-            self.evaluator.eval_on_sequence(tracking_output, sequence)
+            seq_tracks = self.track_on_sequence(sequence)
+            self.evaluator.eval_on_sequence(seq_tracks, sequence)
         overall_scores = self.evaluator.summarize()
         return overall_scores
 
