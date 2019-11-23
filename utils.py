@@ -21,96 +21,74 @@ def resize_img(img, width, height):
     return img
 
 
-def consecutive_integer(mask):
-    """
-    Convert input mask into consecutive integer values, starting from 0. 
-    If the background class is missing to start with, we manually inject 
-    a background pixel at [0, 0] so that the loss function will run properly. 
-    We realize that this is suboptimal and will explore better solutions 
-    in the future. 
-    """
-
-    mask_buffer = np.zeros(mask.shape)
-    if (0 not in np.unique(mask)):
-        mask[0, 0] = 0
-    mask_values = np.unique(mask)
-    change_log = np.zeros(shape=(len(mask_values)))
-    counter = 0
-    for value in mask_values:
-        mask_buffer[mask == value] = counter
-        change_log[counter] = value
-        counter += 1
-    mask = mask_buffer.astype(int)
-    return mask, change_log
-
-
 def prep_image(image_info):
-    image = image_info['image']
-    image = image * 2 - 1
-    image = np.expand_dims(image, axis = 0)
-
-    return image
+    x = image_info['image']
+    x = x * 2 - 1
+    x = x[np.newaxis, ...]
+    return x
 
 
 def prep_class_mask(image_info):
-    class_mask    = image_info['class_mask']
-    class_mask    = np.expand_dims(class_mask, axis = 0)
-    class_mask    = np.expand_dims(class_mask, axis = -1)
+    x = image_info['class_mask']
+    x = x[np.newaxis, ..., np.newaxis]
+    return x
 
-    return class_mask
+
+def prep_occ_class_mask(image_info):
+    x = image_info['occ_class_mask']
+    x = x[np.newaxis, ..., np.newaxis]
+    return x
 
 
 def prep_instance_mask(image_info):
-    instance_mask = image_info['instance_mask']
-    instance_mask = consecutive_integer(instance_mask)
-    instance_mask = np.expand_dims(instance_mask, axis = 0)
-    instance_mask = np.expand_dims(instance_mask, axis = -1)
-
-    return instance_mask
+    x = image_info['instance_mask']
+    x = x[np.newaxis, ..., np.newaxis]
+    return x
 
 
-def prep_identity_mask(image_info):
-    identity_mask = image_info['identity_mask']
-    identity_mask = np.expand_dims(identity_mask, axis = 0)
-    identity_mask = np.expand_dims(identity_mask, axis = -1)
-
-    return identity_mask
+def prep_occ_instance_mask(image_info):
+    x = image_info['occ_instance_mask']
+    x = x[np.newaxis, ..., np.newaxis]
+    return x
 
 
 def prep_optical_flow(image_info):
-    optical_flow = image_info['optical_flow']
-    optical_flow = np.expand_dims(optical_flow, axis = 0)
-
-    return optical_flow
+    x = image_info['optical_flow']
+    x = x[np.newaxis, ...]
+    return x
 
 
 def prep_single_frame(image_info):
     image         = prep_image(image_info)
     class_mask    = prep_class_mask(image_info)
     instance_mask = prep_instance_mask(image_info)
-
     x = image
     y = np.concatenate((class_mask, instance_mask), axis = -1)
-
     return x, y
 
 
 def prep_double_frame(prev_image_info, image_info):
-    prev_image         = prep_image(        prev_image_info)
-    prev_class_mask    = prep_class_mask(   prev_image_info)
-    prev_identity_mask = prep_identity_mask(prev_image_info)
-    optical_flow       = prep_optical_flow( prev_image_info)
-
-    image              = prep_image(        image_info)
-    class_mask         = prep_class_mask(   image_info)
-    identity_mask      = prep_identity_mask(image_info)
-
+    prev_image              = prep_image(               prev_image_info)
+    prev_class_mask         = prep_class_mask(          prev_image_info)
+    occ_prev_class_mask     = prep_occ_class_mask(      prev_image_info)
+    prev_instance_mask      = prep_instance_mask(       prev_image_info)
+    occ_prev_instance_mask  = prep_occ_instance_mask(   prev_image_info)
+    optical_flow            = prep_optical_flow(        prev_image_info)
+    image                   = prep_image(               image_info)
+    class_mask              = prep_class_mask(          image_info)
+    occ_class_mask          = prep_occ_class_mask(      image_info)
+    instance_mask           = prep_instance_mask(       image_info)
+    occ_instance_mask       = prep_occ_instance_mask(   image_info)
     x = np.concatenate((image, prev_image), axis = -1)
     y = np.concatenate((
         class_mask, 
+        occ_class_mask, 
         prev_class_mask, 
-        identity_mask, 
-        prev_identity_mask, 
+        occ_prev_class_mask, 
+        instance_mask, 
+        occ_instance_mask, 
+        prev_instance_mask, 
+        occ_prev_instance_mask, 
         optical_flow), axis = -1)
     return x, y
 
