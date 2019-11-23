@@ -14,3 +14,8 @@ class MaskTrackEvaluator:
     def eval_on_sequence(self, hypothesis, gt_sequence):
         # TODO: match hypothesis with objects for MOT metrics
         return None
+    
+
+    def summarize(self):
+        # TODO: generate overall report
+        return None

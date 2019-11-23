@@ -5,74 +5,110 @@ import tensorflow as tf
 def sequence_loss_with_params(params):
     def double_frame_sequence_loss(y_true, y_pred):
         # hyperparameters
-        delta_var     = params.DELTA_VAR
-        delta_d       = params.DELTA_D
-        class_num     = params.NUM_CLASSES
-        embedding_dim = params.EMBEDDING_DIM
+        delta_var   = params.DELTA_VAR
+        delta_d     = params.DELTA_D
+        nC          = params.NUM_CLASSES
+        nD          = params.EMBEDDING_DIM
 
         # unpack ground truth contents
-        class_mask_gt      = y_true[:, :, :, 0]
-        prev_class_mask_gt = y_true[:, :, :, 1]
-        identity_mask      = y_true[:, :, :, 2]
-        prev_identity_mask = y_true[:, :, :, 3]
-        optical_flow_gt    = y_true[:, :, :, 4:6]
+        class_mask_gt           = y_true[:, :, :, 0]
+        occ_class_mask_gt       = y_true[:, :, :, 1]
+        prev_class_mask_gt      = y_true[:, :, :, 2]
+        occ_prev_class_mask_gt  = y_true[:, :, :, 3]
+        id_mask                 = y_true[:, :, :, 4]
+        occ_id_mask             = y_true[:, :, :, 5]
+        prev_id_mask            = y_true[:, :, :, 6]
+        occ_prev_id_mask        = y_true[:, :, :, 7]
+        optical_flow_gt         = y_true[:, :, :, 8:10]
 
         # y_pred
-        class_mask_pred      = y_pred[:, :, :, :class_num]
-        prev_class_mask_pred = y_pred[:, :, :, class_num:(class_num * 2)]
-        instance_emb         = y_pred[:, :, :, (class_num * 2):(class_num * 2 + embedding_dim)]
-        prev_instance_emb    = y_pred[:, :, :, (class_num * 2 + embedding_dim):(class_num * 2 + embedding_dim * 2)]
-        optical_flow_pred    = y_pred[:, :, :, (class_num * 2 + embedding_dim * 2):]
+        class_mask_pred             = y_pred[:, :, :, (nC * 0):(nC * 1)]
+        occ_class_mask_pred         = y_pred[:, :, :, (nC * 1):(nC * 2)]
+        prev_class_mask_pred        = y_pred[:, :, :, (nC * 2):(nC * 3)]
+        occ_prev_class_mask_pred    = y_pred[:, :, :, (nC * 3):(nC * 4)]
+        instance_emb                = y_pred[:, :, :, (nC * 4 + nD * 0):(nC * 4 + nD * 1)]
+        occ_instance_emb            = y_pred[:, :, :, (nC * 4 + nD * 1):(nC * 4 + nD * 2)]
+        prev_instance_emb           = y_pred[:, :, :, (nC * 4 + nD * 2):(nC * 4 + nD * 3)]
+        occ_prev_instance_emb       = y_pred[:, :, :, (nC * 4 + nD * 3):(nC * 4 + nD * 4)]
+        optical_flow_pred           = y_pred[:, :, :, -2:]
 
         # flatten and combine
         # --identity mask gt
-        identity_mask_flat            = K.flatten(identity_mask)
-        prev_identity_mask_flat       = K.flatten(prev_identity_mask)
-        combined_identity_mask_flat   = tf.concat((identity_mask_flat, prev_identity_mask_flat), axis=0)
+        id_mask_flat            = K.flatten(id_mask)
+        occ_id_mask_flat        = K.flatten(occ_id_mask)
+        prev_id_mask_flat       = K.flatten(prev_id_mask)
+        occ_prev_id_mask_flat   = K.flatten(occ_prev_id_mask)
+        combined_id_mask_flat   = tf.concat(
+            (id_mask_flat, 
+            occ_id_mask_flat, 
+            prev_id_mask_flat, 
+            occ_prev_id_mask_flat), 
+            axis=0)
         # --instance embedding pred
-        instance_emb_flat             = tf.reshape(instance_emb, shape=(-1, embedding_dim))
-        prev_instance_emb_flat        = tf.reshape(prev_instance_emb, shape=(-1, embedding_dim))
-        combined_instance_emb_flat    = tf.concat((instance_emb_flat, prev_instance_emb_flat), axis=0)
+        instance_emb_flat             = tf.reshape(instance_emb, shape=(-1, nD))
+        occ_instance_emb_flat         = tf.reshape(occ_instance_emb, shape=(-1, nD))
+        prev_instance_emb_flat        = tf.reshape(prev_instance_emb, shape=(-1, nD))
+        occ_prev_instance_emb_flat    = tf.reshape(occ_prev_instance_emb, shape=(-1, nD))
+        combined_instance_emb_flat    = tf.concat(
+            (instance_emb_flat, 
+            occ_instance_emb_flat, 
+            prev_instance_emb_flat, 
+            occ_prev_instance_emb_flat), 
+            axis=0)
         # --class mask gt
         class_mask_gt_flat            = K.flatten(class_mask_gt)
+        occ_class_mask_gt_flat        = K.flatten(occ_class_mask_gt)
         prev_class_mask_gt_flat       = K.flatten(prev_class_mask_gt)
-        combined_class_mask_gt_flat   = tf.concat((class_mask_gt_flat, prev_class_mask_gt_flat), axis=0)
+        occ_prev_class_mask_gt_flat   = K.flatten(occ_prev_class_mask_gt)
+        combined_class_mask_gt_flat   = tf.concat(
+            (class_mask_gt_flat, 
+            occ_class_mask_gt_flat,
+            prev_class_mask_gt_flat,
+            occ_prev_class_mask_gt_flat), 
+            axis=0)
         # --class mask pred
-        class_mask_pred_flat          = tf.reshape(class_mask_pred, shape=(-1, class_num))
-        prev_class_mask_pred_flat     = tf.reshape(prev_class_mask_pred, shape=(-1, class_num))
-        combined_class_mask_pred_flat = tf.concat((class_mask_pred_flat, prev_class_mask_pred_flat), axis=0)
+        class_mask_pred_flat          = tf.reshape(class_mask_pred, shape=(-1, nC))
+        occ_class_mask_pred_flat      = tf.reshape(occ_class_mask_pred, shape=(-1, nC))
+        prev_class_mask_pred_flat     = tf.reshape(prev_class_mask_pred, shape=(-1, nC))
+        occ_prev_class_mask_pred_flat = tf.reshape(occ_prev_class_mask_pred, shape=(-1, nC))
+        combined_class_mask_pred_flat = tf.concat(
+            (class_mask_pred_flat, 
+            occ_class_mask_pred_flat, 
+            prev_class_mask_pred_flat,
+            occ_prev_class_mask_pred_flat), 
+            axis=0)
 
         # get number of pixels and clusters (without background)
-        num_cluster = tf.reduce_max(combined_identity_mask_flat)
+        num_cluster = tf.reduce_max(combined_id_mask_flat)
         num_cluster = tf.cast(num_cluster, tf.int32)
 
         # cast masks into tf.int32 for one-hot encoding
-        combined_identity_mask_flat = tf.cast(combined_identity_mask_flat, tf.int32)
+        combined_id_mask_flat = tf.cast(combined_id_mask_flat, tf.int32)
         combined_class_mask_gt_flat = tf.cast(combined_class_mask_gt_flat, tf.int32)
 
         # one-hot encoding
-        combined_identity_mask_flat -= 1
-        combined_identity_mask_flat_one_hot = tf.one_hot(combined_identity_mask_flat, num_cluster)
-        conbined_class_mask_gt_flat_one_hot = tf.one_hot(combined_class_mask_gt_flat, class_num)
+        combined_id_mask_flat -= 1
+        combined_id_mask_flat_one_hot = tf.one_hot(combined_id_mask_flat, num_cluster)
+        conbined_class_mask_gt_flat_one_hot = tf.one_hot(combined_class_mask_gt_flat, nC)
 
         # ignore background pixels
-        non_background_idx                  = tf.greater(combined_identity_mask_flat, -1)
+        non_background_idx                  = tf.greater(combined_id_mask_flat, -1)
         combined_instance_emb_flat          = tf.boolean_mask(combined_instance_emb_flat, non_background_idx)
-        combined_identity_mask_flat         = tf.boolean_mask(combined_identity_mask_flat, non_background_idx)
-        combined_identity_mask_flat_one_hot = tf.boolean_mask(combined_identity_mask_flat_one_hot, non_background_idx)
+        combined_id_mask_flat               = tf.boolean_mask(combined_id_mask_flat, non_background_idx)
+        combined_id_mask_flat_one_hot       = tf.boolean_mask(combined_id_mask_flat_one_hot, non_background_idx)
         combined_class_mask_gt_flat         = tf.boolean_mask(combined_class_mask_gt_flat, non_background_idx)
 
         # center count
-        combined_identity_mask_flat_one_hot = tf.cast(combined_identity_mask_flat_one_hot, tf.float32)
-        center_count = tf.reduce_sum(combined_identity_mask_flat_one_hot, axis=0)
+        combined_id_mask_flat_one_hot = tf.cast(combined_id_mask_flat_one_hot, tf.float32)
+        center_count = tf.reduce_sum(combined_id_mask_flat_one_hot, axis=0)
         # add a small number to avoid division by zero
 
         # variance term
         embedding_sum_by_instance = tf.matmul(
-            tf.transpose(combined_instance_emb_flat), combined_identity_mask_flat_one_hot)
+            tf.transpose(combined_instance_emb_flat), combined_id_mask_flat_one_hot)
         centers = tf.math.divide_no_nan(embedding_sum_by_instance, center_count)
-        gathered_center = tf.gather(centers, combined_identity_mask_flat, axis=1)
-        gathered_center_count = tf.gather(center_count, combined_identity_mask_flat)
+        gathered_center = tf.gather(centers, combined_id_mask_flat, axis=1)
+        gathered_center_count = tf.gather(center_count, combined_id_mask_flat)
         combined_emb_t = tf.transpose(combined_instance_emb_flat)
         var_dist = tf.norm(combined_emb_t - gathered_center, ord=1, axis=0) - delta_var
         # changed from soft hinge loss to hard cutoff
@@ -88,13 +124,13 @@ def sequence_loss_with_params(params):
         # multiply classification with one hot flat identity mask
         combined_class_mask_gt_flat = tf.cast(combined_class_mask_gt_flat, tf.float32)
         combined_class_mask_gt_flat = tf.expand_dims(combined_class_mask_gt_flat, 1)
-        filtered_class = tf.multiply(combined_identity_mask_flat_one_hot, combined_class_mask_gt_flat)
+        filtered_class = tf.multiply(combined_id_mask_flat_one_hot, combined_class_mask_gt_flat)
         # shrink to a 1 by num_of_cluster vector to map instance to class;
         # by reduce_max, any class other than 0 (background) stands out
         instance_to_class = tf.reduce_max(filtered_class, axis = [0])
 
         def distance_true_fn(num_cluster_by_class, centers_by_class):
-            centers_row_buffer = tf.ones((embedding_dim, num_cluster_by_class, num_cluster_by_class))
+            centers_row_buffer = tf.ones((nD, num_cluster_by_class, num_cluster_by_class))
             centers_by_class = tf.expand_dims(centers_by_class, axis=2)
             centers_row = tf.multiply(centers_row_buffer, centers_by_class)
             centers_col = tf.transpose(centers_row, perm=[0, 2, 1])
@@ -105,7 +141,7 @@ def sequence_loss_with_params(params):
             idx2 = idx2 - tf.diag(diag)
             idx2 = tf.cast(idx2, tf.bool)
             idx2 = K.flatten(idx2)
-            dist_matrix = tf.reshape(dist_matrix, [embedding_dim, -1])
+            dist_matrix = tf.reshape(dist_matrix, [nD, -1])
             dist_matrix = tf.transpose(dist_matrix)
             sampled_dist = tf.boolean_mask(dist_matrix, idx2)
             distance_term = tf.square(tf.maximum(
@@ -122,7 +158,7 @@ def sequence_loss_with_params(params):
 
         distance_term_total = 0.0
         # center distance term
-        for i in range(class_num-1):
+        for i in range(nC-1):
             class_idx = tf.equal(instance_to_class, i+1)
             centers_transpose = tf.transpose(centers)
             centers_by_class_transpose = tf.boolean_mask(centers_transpose, class_idx)
@@ -158,11 +194,11 @@ def sequence_loss_with_params(params):
 def single_frame_loss_with_params(params):
     def multi_class_instance_embedding_loss(y_true, y_pred):
         # hyperparameters
-        batch_size    = params.BATCH_SIZE
-        delta_var     = params.DELTA_VAR
-        delta_d       = params.DELTA_D
-        class_num     = params.NUM_CLASSES
-        embedding_dim = params.EMBEDDING_DIM
+        batch_size  = params.BATCH_SIZE
+        delta_var   = params.DELTA_VAR
+        delta_d     = params.DELTA_D
+        nC          = params.NUM_CLASSES
+        nD          = params.EMBEDDING_DIM
 
         total_loss = 0
         # unpack ground truth contents
@@ -171,8 +207,8 @@ def single_frame_loss_with_params(params):
             instance_mask = y_true[j:j+1, :, :, 1]
 
             # y_pred
-            class_pred   = y_pred[j:j+1, :, :, :class_num]
-            instance_emb = y_pred[j:j+1, :, :, (class_num):(class_num + embedding_dim)]
+            class_pred   = y_pred[j:j+1, :, :, :nC]
+            instance_emb = y_pred[j:j+1, :, :, (nC):(nC + nD)]
 
             # get number of pixels and clusters (without background)
             num_cluster = tf.reduce_max(instance_mask)
@@ -184,15 +220,15 @@ def single_frame_loss_with_params(params):
             instance_mask_one_hot = tf.one_hot(instance_mask, num_cluster)
 
             class_mask = tf.cast(class_mask, tf.int32)
-            class_mask_one_hot = tf.one_hot(class_mask, class_num)
+            class_mask_one_hot = tf.one_hot(class_mask, nC)
 
             # flatten
-            instance_emb_flat           = tf.reshape(instance_emb, shape=(-1, embedding_dim))
+            instance_emb_flat           = tf.reshape(instance_emb, shape=(-1, nD))
             instance_mask_one_hot_flat  = tf.reshape(instance_mask_one_hot, shape=(-1, num_cluster))
             instance_mask_flat          = K.flatten(instance_mask)
 
-            class_mask_flat             = tf.reshape(class_mask_one_hot, shape=(-1, class_num))
-            class_pred_flat             = tf.reshape(class_pred, shape=(-1, class_num))
+            class_mask_flat             = tf.reshape(class_mask_one_hot, shape=(-1, nC))
+            class_pred_flat             = tf.reshape(class_pred, shape=(-1, nC))
 
             # ignore background pixels
             non_background_idx          = tf.greater(instance_mask_flat, -1)
@@ -225,7 +261,7 @@ def single_frame_loss_with_params(params):
 
 
             def true_fn(num_cluster_by_class, centers_by_class):
-                centers_row_buffer = tf.ones((embedding_dim, num_cluster_by_class, num_cluster_by_class))
+                centers_row_buffer = tf.ones((nD, num_cluster_by_class, num_cluster_by_class))
                 centers_by_class = tf.expand_dims(centers_by_class, axis=2)
                 centers_row = tf.multiply(centers_row_buffer, centers_by_class)
                 centers_col = tf.transpose(centers_row, perm=[0, 2, 1])
@@ -236,7 +272,7 @@ def single_frame_loss_with_params(params):
                 idx2 = idx2 - tf.diag(diag)
                 idx2 = tf.cast(idx2, tf.bool)
                 idx2 = K.flatten(idx2)
-                dist_matrix = tf.reshape(dist_matrix, [embedding_dim, -1])
+                dist_matrix = tf.reshape(dist_matrix, [nD, -1])
                 dist_matrix = tf.transpose(dist_matrix)
                 sampled_dist = tf.boolean_mask(dist_matrix, idx2)
                 distance_term = tf.square(tf.maximum(
@@ -253,7 +289,7 @@ def single_frame_loss_with_params(params):
 
             distance_term_total = 0.0
             # center distance term
-            for i in range(class_num-1):
+            for i in range(nC-1):
                 class_idx = tf.equal(instance_to_class, i+1)
                 centers_transpose = tf.transpose(centers)
                 centers_by_class_transpose = tf.boolean_mask(centers_transpose, class_idx)

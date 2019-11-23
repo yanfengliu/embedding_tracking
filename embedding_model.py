@@ -92,18 +92,26 @@ def SequenceEmbeddingModel(params):
 
     # outputs
     class_mask              = softmax_module(middle, num_filter, num_classes)
+    class_mask_occ          = softmax_module(middle, num_filter, num_classes)
     class_mask_prev         = softmax_module(middle, num_filter, num_classes)
-    instance_embedding      = embedding_module(middle, num_filter, embedding_dim)
-    instance_embedding_prev = embedding_module(middle, num_filter, embedding_dim)
+    class_mask_prev_occ     = softmax_module(middle, num_filter, num_classes)
+    instance_emb            = embedding_module(middle, num_filter, embedding_dim)
+    instance_emb_occ        = embedding_module(middle, num_filter, embedding_dim)
+    instance_emb_prev       = embedding_module(middle, num_filter, embedding_dim)
+    instance_emb_prev_occ   = embedding_module(middle, num_filter, embedding_dim)
     optical_flow            = embedding_module(middle, num_filter, 2)
 
     # concatenate outputs
     combined_output = Concatenate(axis=-1)([
-        class_mask,
-        class_mask_prev,
-        instance_embedding,
-        instance_embedding_prev,
-        optical_flow])
+        class_mask           ,
+        class_mask_occ       ,
+        class_mask_prev      ,
+        class_mask_prev_occ  ,
+        instance_emb         ,
+        instance_emb_occ     ,
+        instance_emb_prev    ,
+        instance_emb_prev_occ,
+        optical_flow         ])
 
     # build model
     model = Model(inputs = img_inputs, outputs = combined_output)
