@@ -3,25 +3,21 @@ import time
 
 
 def embedding_to_instance(embedding, class_mask_int, params):
-    output_size              = params.OUTPUT_SIZE
-    class_num                = params.NUM_CLASSES
-    ETH_mean_shift_threshold = params.ETH_MEAN_SHIFT_THRESHOLD
-
     width, height, _ = embedding.shape
     cluster_all_class = np.zeros((width, height))
     previous_highest_label = 0
     instance_to_class = []
-    for j in range(class_num-1):
+    for j in range(params.NUM_CLASSES-1):
         class_mask_slice = np.zeros((width, height))
         class_mask_slice[class_mask_int == j+1] = 1
         cluster = ETH_mean_shift(
             data=embedding, 
             mask=class_mask_slice, 
-            threshold=ETH_mean_shift_threshold)
+            threshold=params.ETH_MEAN_SHIFT_THRESHOLD)
         instance_to_class += [j+1] * np.max(cluster).astype(np.int)
         cluster[cluster != 0] += previous_highest_label
         filter_mask = class_mask_slice > 0
-        filter_template = np.zeros((output_size, output_size*2))
+        filter_template = np.zeros((width, height))
         filter_template[filter_mask] = 1
         cluster = np.multiply(cluster, filter_template)
         cluster_all_class += cluster
