@@ -49,11 +49,13 @@ class MaskTrackEvaluator:
     
 
     def summarize(self):
-        print('Matching hypothesis with groud truth')
+        metrics_names = ['num_frames', 'idf1', 'mota']
+        print('Matching hypothesis with ground truth')
+        print(f'Metrics: {metrics_names}')
         mh = mm.metrics.create()
         summary = mh.compute_many(
             self.accs, 
-            metrics=mm.metrics.motchallenge_metrics, 
+            metrics=metrics_names, 
             names=self.names,
             generate_overall=True
             )
