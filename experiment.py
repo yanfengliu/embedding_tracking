@@ -94,7 +94,8 @@ class Experiment:
     def eval(self, data_loader):
         print('Evaluating model')
         evaluator = eval.MaskTrackEvaluator(iou_threshold=self.params.IOU_THRESHOLD)
-        for _ in range(data_loader.num_seq):
+        for i in range(data_loader.num_seq):
+            print(f'Sequence {i+1}/{data_loader.num_seq}')
             sequence = data_loader.get_next_sequence()
             tracks = self.inference_model.track_on_sequence(sequence)
             evaluator.eval_on_sequence(tracks, sequence)

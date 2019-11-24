@@ -16,8 +16,8 @@ params.IMG_SIZE                 = 256
 params.OUTPUT_SIZE              = 64
 params.SEQUENCE_LEN             = 100
 params.TRAIN_NUM_SEQ            = 500
-params.VAL_NUM_SEQ              = 50
-params.TEST_NUM_SEQ             = 50
+params.VAL_NUM_SEQ              = 20
+params.TEST_NUM_SEQ             = 20
 params.RANDOM_SIZE              = True
 params.OPTICAL_FLOW_WEIGHT      = 0
 params.BACKBONE                 = 'xception'
@@ -35,4 +35,6 @@ params.IOU_THRESHOLD            = 0.5
 params.MASK_AREA_THRESHOLD      = 20
 
 experiment = Experiment(params)
-experiment.run()
+experiment.init_model()
+experiment.epoch = 0
+experiment.test()
