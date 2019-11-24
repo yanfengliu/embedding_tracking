@@ -120,7 +120,7 @@ class Experiment:
         self.epoch = 0
         self.step = 0
         self.loss_history = []
-        for epoch in range(self.params.EPOCHS):
+        for epoch in range(self.latest_epoch, self.params.EPOCHS):
             print(f'Training epoch {epoch+1}/{self.params.EPOCHS}')
             self.epoch = epoch
             for _ in range(self.params.TRAIN_NUM_SEQ):
