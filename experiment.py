@@ -102,7 +102,7 @@ class Experiment:
 
 
     def write_summary(self, strsummary, eval_type):
-        with open(f"{self.params.FEATURE_STRING}_{eval_type}.txt", "a") as f:
+        with open(f"summary/{self.params.FEATURE_STRING}_{eval_type}.txt", "a") as f:
             f.write(f'Epoch: {self.epoch} \n')
             f.write(f'{strsummary} \n')
     
