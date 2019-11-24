@@ -127,7 +127,6 @@ class SequenceDataLoader():
             if self.shuffle:
                 np.random.shuffle(self.seq_list)
         seq_name = self.seq_list[self.current_seq]
-        print(f'Next sequence: {seq_name}')
         pickle_full_path = os.path.join(self.dataset_path, seq_name, 'sequence.pickle')
         with open(pickle_full_path, 'rb') as handle:
             sequence = pickle.load(handle)
