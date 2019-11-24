@@ -47,12 +47,12 @@ class Experiment:
                 saved_epoch = int(filename.split('.')[0])
                 if saved_epoch > self.latest_saved_epoch:
                     self.latest_saved_epoch = saved_epoch
-        self.model_full_path = os.path.join(
-            self.params.MODEL_SAVE_DIR,
-            f'{self.latest_saved_epoch}.h5'
-        )
-        print(f'Loading weights from {self.model_full_path}')
-        self.model.load_weights(self.model_full_path)
+            self.model_full_path = os.path.join(
+                self.params.MODEL_SAVE_DIR,
+                f'{self.latest_saved_epoch}.h5'
+            )
+            print(f'Loading weights from {self.model_full_path}')
+            self.model.load_weights(self.model_full_path)
 
 
     def init_model(self):
