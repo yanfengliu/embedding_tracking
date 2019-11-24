@@ -25,8 +25,6 @@ class Experiment:
     def __init__(self, params):
         self.params = params
         utils.mkdir_if_missing(self.params.MODEL_SAVE_DIR)
-        self.model_full_path = os.path.join(
-            self.params.MODEL_SAVE_DIR, self.params.MODEL_SAVE_NAME)
         self.val_datagen = datagen.SequenceDataGenerator(
             num_shape = self.params.NUM_SHAPE,
             image_size = self.params.IMG_SIZE,
@@ -41,17 +39,33 @@ class Experiment:
             dataset_path=self.params.TEST_SET_PATH,  shuffle=False)
     
 
+    def load_latest_weight(self):
+        save_files = os.listdir(self.params.MODEL_SAVE_DIR)
+        self.latest_epoch = 0
+        if len(save_files) > 0:
+            for filename in save_files:
+                saved_epoch = int(filename.split('.')[0])
+                if saved_epoch > self.latest_epoch:
+                    self.latest_epoch = saved_epoch
+        self.model_full_path = os.path.join(
+            self.params.MODEL_SAVE_DIR,
+            f'{self.latest_epoch}.h5'
+        )
+        self.model.load_weights(self.model_full_path)
+
+
     def init_model(self):
         self.model = embedding_model.SequenceEmbeddingModel(self.params)
         optim = keras.optimizers.Adam(lr = self.params.LEARNING_RATE)
         loss_function = loss_functions.sequence_loss_with_params(self.params)
         self.model.compile(optim, loss = loss_function)
+        self.load_latest_weight()
         self.inference_model = inference.InferenceModel(self.model, self.params)
     
 
     def save_model(self):
         print(f'saving model at {self.model_full_path}')
-        self.model.save(self.model_full_path)
+        self.model.save_weights(self.model_full_path)
     
 
     def visual_val(self):
@@ -72,7 +86,7 @@ class Experiment:
             history = self.model.fit(x, y, batch_size = 1, verbose = False)
             latest_loss = history.history['loss'][-1]
             self.loss_history.append(latest_loss)
-            if self.step % self.params.STEP_PER_VISUAL == 0:
+            if self.step % self.params.STEPS_PER_VISUAL == 0:
                 self.visual_val()
 
 
@@ -113,8 +127,8 @@ class Experiment:
                 sequence = self.train_data_loader.get_next_sequence()
                 self.train_on_sequence(sequence)
             if (epoch + 1) % self.params.EPOCHS_PER_SAVE == 0:
-                self.validate()
                 self.save_model()
+                self.validate()
 
 
     def run(self):

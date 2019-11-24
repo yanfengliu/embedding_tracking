@@ -50,7 +50,7 @@ class InferenceModel:
         # TODO: use masks to track
         OS = self.params.OUTPUT_SIZE
         _, _, cluster_all_class = self.segment(x)
-        num_instance = np.max(cluster_all_class)
+        num_instance = int(np.max(cluster_all_class))
         amodal_prev_masks = []
         amodal_masks = []
         for i in range(num_instance):
