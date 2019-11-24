@@ -50,10 +50,11 @@ class Experiment:
                 saved_epoch = int(filename.split('.')[0])
                 if saved_epoch > self.latest_saved_epoch:
                     self.latest_saved_epoch = saved_epoch
-            self.model_full_path = os.path.join(
-                self.params.MODEL_SAVE_DIR,
-                f'{self.latest_saved_epoch}.h5'
-            )
+        self.model_full_path = os.path.join(
+            self.params.MODEL_SAVE_DIR,
+            f'{self.latest_saved_epoch}.h5'
+        )
+        if len(save_files) > 0:
             print(f'Loading weights from {self.model_full_path}')
             self.model.load_weights(self.model_full_path)
 
@@ -108,7 +109,9 @@ class Experiment:
 
 
     def write_summary(self, strsummary, eval_type):
-        with open(f"summary/{self.params.FEATURE_STRING}_{eval_type}.txt", "a") as f:
+        txt_path = f'summary/{self.params.FEATURE_STRING}_{eval_type}.txt'
+        print(f 'Writing metrics summary to {txt_path}')
+        with open(txt_path, "a") as f:
             f.write(f'Epoch: {self.epoch} \n')
             f.write(f'{strsummary} \n')
     

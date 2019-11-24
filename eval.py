@@ -49,6 +49,7 @@ class MaskTrackEvaluator:
     
 
     def summarize(self):
+        print('Matching hypothesis with groud truth')
         mh = mm.metrics.create()
         summary = mh.compute_many(
             self.accs, 
