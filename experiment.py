@@ -56,8 +56,9 @@ class Experiment:
 
     def visual_val(self):
         clear_output(wait=True)
-        visual.visualize_history(
-            self.loss_history, f'loss, epoch: {self.epoch}, total step: {self.step}')
+        utils.visualize_history(
+            self.loss_history, 
+            f'loss, epoch: {self.epoch}, total step: {self.step}')
         sequence = self.val_datagen.get_sequence()
         pair = sequence[0:2]
         visual.eval_pair(self.model, pair, self.params)
@@ -73,55 +74,49 @@ class Experiment:
             self.loss_history.append(latest_loss)
             if self.step % self.params.STEP_PER_VISUAL == 0:
                 self.visual_val()
+
+
+    def eval(self, data_loader):
+        evaluator = eval.MaskTrackEvaluator(iou_threshold=self.params.IOU_THRESHOLD)
+        for _ in range(data_loader.num_seq):
+            sequence = data_loader.get_next_sequence()
+            tracks = self.inference_model.track_on_sequence(sequence)
+            evaluator.eval_on_sequence(tracks, sequence)
+        strsummary = evaluator.summarize()
+        return strsummary
+
+
+    def write_summary(self, strsummary, eval_type):
+        with open(f"{self.params.FEATURE_STRING}_{eval_type}.txt", "a") as f:
+            f.write(f'Epoch: {self.epoch} \n')
+            f.write(f'{strsummary} \n')
     
-    
-    def track_on_sequence(self, sequence):
-        for i in range(self.params.SEQUENCE_LEN - 1):
-            [prev_image_info, image_info] = sequence[i:i+2]
-            x, _ = utils.prep_double_frame(prev_image_info, image_info)
-            self.inference_model.update_track(x)
-        seq_tracks = self.inference_model.get_tracks()
-        return seq_tracks
+
+    def validate(self):
+        strsummary = self.eval(self.val_data_loader)
+        self.write_summary(strsummary, 'val')
 
 
-    def eval(self):
-        self.evaluator = eval.MaskTrackEvaluator(iou_threshold=self.params.IOU_THRESHOLD)
-        for _ in range(self.params.VAL_NUM_SEQ):
-            sequence = self.val_data_loader.get_next_sequence()
-            seq_tracks = self.track_on_sequence(sequence)
-            self.evaluator.eval_on_sequence(seq_tracks, sequence)
-        overall_scores = self.evaluator.summarize()
-        return overall_scores
+    def test(self):
+        strsummary = self.eval(self.test_data_loader)
+        self.write_summary(strsummary, 'test')
 
 
-    def train_and_eval(self):
+    def train_val_save(self):
         self.epoch = 0
         self.step = 0
         self.loss_history = []
-        self.metrics = []
         for epoch in range(self.params.EPOCHS):
             self.epoch = epoch
             for _ in range(self.params.TRAIN_NUM_SEQ):
                 sequence = self.train_data_loader.get_next_sequence()
                 self.train_on_sequence(sequence)
             if (epoch + 1) % self.params.EPOCHS_PER_SAVE == 0:
+                self.validate()
                 self.save_model()
-                scores = self.eval()
-                self.metrics.append(scores)
-    
-
-    def test(self):
-        # TODO: test on test set and report motmetrics
-        pass
-
-
-    def report_metrics(self):
-        # TODO: fuse scores together and generate report
-        pass
 
 
     def run(self):
         self.init_model()
-        self.train_and_eval()
+        self.train_val_save()
         self.test()
-        self.report_metrics()

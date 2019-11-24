@@ -5,8 +5,8 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from shapes import get_image_from_shapes, get_flow_from_shapes, get_shapes
-from utils import consecutive_integer, totuple
+import shapes
+import utils
 
 
 min_dist = 0.1
@@ -26,10 +26,10 @@ class ShapeDataGenerator:
         shape_choices = [1, 2, 3]
         shape_types = np.random.choice(
             shape_choices, size=(self.num_shape), replace=True)
-        self.shapes = get_shapes(shape_types, self.image_size, self.shape_sizes)
+        self.shapes = shapes.get_shapes(shape_types, self.image_size, self.shape_sizes)
     
     def render_frame(self):
-        image_info = get_image_from_shapes(self.shapes, self.image_size)
+        image_info = shapes.get_image_from_shapes(self.shapes, self.image_size)
         return image_info
 
 
@@ -100,7 +100,7 @@ class SequenceDataGenerator(ShapeDataGenerator):
 
     
     def render_flow(self):
-        flow = get_flow_from_shapes(self.shapes, self.image_size)
+        flow = shapes.get_flow_from_shapes(self.shapes, self.image_size)
         return flow
 
 

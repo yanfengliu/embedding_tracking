@@ -117,3 +117,12 @@ class InferenceModel:
 
     def get_tracks(self):
         return self.frames
+
+
+    def track_on_sequence(self, sequence):
+        for i in range(len(sequence) - 1):
+            [prev_image_info, image_info] = sequence[i:i+2]
+            x, _ = utils.prep_double_frame(prev_image_info, image_info)
+            self.update_track(x)
+        tracks = self.get_tracks()
+        return tracks
