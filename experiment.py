@@ -51,6 +51,7 @@ class Experiment:
             self.params.MODEL_SAVE_DIR,
             f'{self.latest_epoch}.h5'
         )
+        print(f'Loading weights from {self.model_full_path}')
         self.model.load_weights(self.model_full_path)
 
 

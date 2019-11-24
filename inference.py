@@ -5,12 +5,7 @@ This module handles the detection and tracking logic
 import postprocessing
 import utils
 import numpy as np 
-
-
-class Target:
-    def __init__(self, mask, id):
-        self.mask = mask
-        self.id = id
+from target import Target
 
 
 class InferenceModel:
@@ -47,7 +42,6 @@ class InferenceModel:
 
 
     def get_mask_pair(self, x):
-        # TODO: use masks to track
         OS = self.params.OUTPUT_SIZE
         _, _, cluster_all_class = self.segment(x)
         num_instance = int(np.max(cluster_all_class))
@@ -115,14 +109,10 @@ class InferenceModel:
             self.frames.append(frame)
 
 
-    def get_tracks(self):
-        return self.frames
-
-
     def track_on_sequence(self, sequence):
+        self.frames = []
         for i in range(len(sequence) - 1):
             [prev_image_info, image_info] = sequence[i:i+2]
             x, _ = utils.prep_double_frame(prev_image_info, image_info)
             self.update_track(x)
-        tracks = self.get_tracks()
-        return tracks
+        return self.frames

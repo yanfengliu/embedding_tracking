@@ -1,6 +1,7 @@
 import motmetrics as mm
 import numpy as np
 import utils
+from target import Target
 
 
 class MaskTrackEvaluator:
@@ -9,8 +10,22 @@ class MaskTrackEvaluator:
         self.accs = []
     
 
+    def gen_target_sequence(self, sequence):
+        gt_sequence = []
+        for i in range(len(sequence)):
+            frame = []
+            image_info = sequence[i]
+            full_masks = image_info['full_masks']
+            id = 0
+            for full_mask in full_masks:
+                frame.append(Target(full_mask, id))
+                id += 1
+            gt_sequence.append(frame)
+        return gt_sequence
+
+
     def eval_on_sequence(self, dt_sequence, gt_sequence):
-        # TODO: match hypothesis with objects for MOT metrics
+        gt_sequence = self.gen_target_sequence(gt_sequence)
         acc = mm.MOTAccumulator(auto_id=True)
         for i in range(len(dt_sequence)):
             dt_frame = dt_sequence[i]
