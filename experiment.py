@@ -41,15 +41,15 @@ class Experiment:
 
     def load_latest_weight(self):
         save_files = os.listdir(self.params.MODEL_SAVE_DIR)
-        self.latest_epoch = 0
+        self.latest_saved_epoch = 0
         if len(save_files) > 0:
             for filename in save_files:
                 saved_epoch = int(filename.split('.')[0])
-                if saved_epoch > self.latest_epoch:
-                    self.latest_epoch = saved_epoch
+                if saved_epoch > self.latest_saved_epoch:
+                    self.latest_saved_epoch = saved_epoch
         self.model_full_path = os.path.join(
             self.params.MODEL_SAVE_DIR,
-            f'{self.latest_epoch}.h5'
+            f'{self.latest_saved_epoch}.h5'
         )
         print(f'Loading weights from {self.model_full_path}')
         self.model.load_weights(self.model_full_path)
@@ -121,7 +121,7 @@ class Experiment:
         self.epoch = 0
         self.step = 0
         self.loss_history = []
-        for epoch in range(self.latest_epoch, self.params.EPOCHS):
+        for epoch in range(self.latest_saved_epoch, self.params.EPOCHS):
             print(f'Training epoch {epoch+1}/{self.params.EPOCHS}')
             self.epoch = epoch
             for _ in range(self.params.TRAIN_NUM_SEQ):
