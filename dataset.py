@@ -54,7 +54,7 @@ def gen_ccmcpe(params):
         test_seq_dict[f'seq_{i}'] = test_seq_path
     ccmcpe['test'] = test_seq_dict
 
-    ccmcpe_json_path = os.path.join(params.GITHUB_DIR, 'Towards-Realtime-MOT' 'cfg', 'ccmcpe.json')
+    ccmcpe_json_path = os.path.join(params.GITHUB_DIR, 'Towards-Realtime-MOT', 'cfg', 'ccmcpe.json')
     with open(ccmcpe_json_path, 'w') as f:
         json_str = json.dumps(ccmcpe)
         f.write(json_str)
