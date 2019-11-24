@@ -4,6 +4,7 @@ This module provides a unified class that handles the experiment workflow
 
 
 import os
+import time
 
 import keras
 import motmetrics as mm
@@ -13,17 +14,19 @@ from IPython.display import clear_output
 import datagen
 import dataset
 import embedding_model
+import eval
+import inference
 import loss_functions
 import postprocessing
 import utils
 import visual
-import eval
-import inference
 
 
 class Experiment:
     def __init__(self, params):
         self.params = params
+        self.starting_time = time.time()
+        self.elapsed_time = 0
         utils.mkdir_if_missing(self.params.MODEL_SAVE_DIR)
         self.val_datagen = datagen.SequenceDataGenerator(
             num_shape = self.params.NUM_SHAPE,
@@ -71,9 +74,10 @@ class Experiment:
 
     def visual_val(self):
         clear_output(wait=True)
+        self.elapsed_time = time.time() - self.starting_time
         utils.visualize_history(
             self.loss_history, 
-            f'loss, epoch: {self.epoch}, total step: {self.step}')
+            f'loss, epoch: {self.epoch}, total step: {self.step}, total time: {self.elapsed_time}')
         sequence = self.val_datagen.get_sequence()
         pair = sequence[0:2]
         visual.eval_pair(self.model, pair, self.params)
@@ -84,7 +88,7 @@ class Experiment:
             self.step += 1
             [prev_image_info, image_info] = sequence[i:i+2]
             x, y = utils.prep_double_frame(prev_image_info, image_info)
-            history = self.model.fit(x, y, batch_size = 1, verbose = False)
+            history = self.model.fit(x, y, batch_size = 1, verbose = True)
             latest_loss = history.history['loss'][-1]
             self.loss_history.append(latest_loss)
             if self.step % self.params.STEPS_PER_VISUAL == 0:
