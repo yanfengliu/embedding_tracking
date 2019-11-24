@@ -69,7 +69,7 @@ class Experiment:
             self.step += 1
             [prev_image_info, image_info] = sequence[i:i+2]
             x, y = utils.prep_double_frame(prev_image_info, image_info)
-            history = self.model.fit(x, y, batch_size = 1, verbose = False)
+            history = self.model.fit(x, y, batch_size = 1, verbose = True)
             latest_loss = history.history['loss'][-1]
             self.loss_history.append(latest_loss)
             if self.step % self.params.STEP_PER_VISUAL == 0:
@@ -107,6 +107,7 @@ class Experiment:
         self.step = 0
         self.loss_history = []
         for epoch in range(self.params.EPOCHS):
+            print(f'Training epoch {epoch+1}/{self.params.EPOCHS}')
             self.epoch = epoch
             for _ in range(self.params.TRAIN_NUM_SEQ):
                 sequence = self.train_data_loader.get_next_sequence()
