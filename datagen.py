@@ -1,7 +1,3 @@
-import os
-import pickle
-
-import cv2
 import numpy as np
 from PIL import Image
 
@@ -9,8 +5,8 @@ import shapes
 import utils
 
 
-min_dist = 0.1
-max_dist = 0.9
+min_dist = 0
+max_dist = 1
 
 class ShapeDataGenerator:
     def __init__(self, num_shape, image_size, shape_sizes=None):
@@ -78,11 +74,11 @@ class SequenceDataGenerator(ShapeDataGenerator):
             shape_info = self.shapes[i]
             if shape_info['type'] == 'round':
                 x1, y1 = shape_info['x1'], shape_info['y1']
-                if (x1 < min_dist * self.image_size and dx < 0) or (
-                    x1 > max_dist * self.image_size and dx > 0):
+                if (x1 < 0.2 * self.image_size and dx < 0) or (
+                    x1 > 1.0 * self.image_size and dx > 0):
                     dx = -dx
-                if (y1 < min_dist * self.image_size and dy < 0) or (
-                    y1 > max_dist * self.image_size and dy > 0):
+                if (y1 < 0.2 * self.image_size and dy < 0) or (
+                    y1 > 1.0 * self.image_size and dy > 0):
                     dy = -dy
             else:
                 corners = shape_info['corners']

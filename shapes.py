@@ -84,14 +84,14 @@ def get_shape(shape_choice_int, image_size, shape_size, identity):
     shape_info['rotation'] = R
     if (shape_choice_str == "circle" or shape_choice_str == "ellipse"):
         if shape_choice_str == "circle":
-            x1, y1 = get_circle_center(shape_size)
+            x_center, y_center = get_circle_center(shape_size)
         elif shape_choice_str == "ellipse":
-            x1, y1 = get_ellipse_center(shape_size)
+            x_center, y_center = get_ellipse_center(shape_size)
         else:
             raise ValueError('Invalid shape_choice_str value')
         shape_info['type'] = 'round'
-        shape_info['x1'] = x1 + x_shift
-        shape_info['y1'] = y1 + y_shift
+        shape_info['x1'] = x_center + x_shift
+        shape_info['y1'] = y_center + y_shift
     else:
         if (shape_choice_str == "triangle"):
             corners = get_triangle_corners(shape_size)
