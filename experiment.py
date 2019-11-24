@@ -69,7 +69,7 @@ class Experiment:
             self.step += 1
             [prev_image_info, image_info] = sequence[i:i+2]
             x, y = utils.prep_double_frame(prev_image_info, image_info)
-            history = self.model.fit(x, y, batch_size = 1, verbose = True)
+            history = self.model.fit(x, y, batch_size = 1, verbose = False)
             latest_loss = history.history['loss'][-1]
             self.loss_history.append(latest_loss)
             if self.step % self.params.STEP_PER_VISUAL == 0:

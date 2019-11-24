@@ -183,7 +183,7 @@ def eval_pair(model, pair, params):
     image_size  = params.IMG_SIZE
 
     images  = np.zeros((image_size, image_size*2, 3))
-    board   = np.zeros((OS*2, OS*9, 3))
+    board   = np.zeros((OS*2, OS*8, 3))
 
     prev_image_info, image_info = pair
     x, _ = utils.prep_double_frame(prev_image_info, image_info)
@@ -192,8 +192,8 @@ def eval_pair(model, pair, params):
 
     image                       = image_info['image']
     prev_image                  = prev_image_info['image']
-    images[:, :image_size, :]   = prev_image
-    images[:, image_size:, :]   = image
+    images[:, :image_size, :]   = image
+    images[:, image_size:, :]   = prev_image
 
     combined_class_mask_gt_int      = np.zeros((OS, OS*4))
     combined_id_mask_gt             = np.zeros((OS, OS*4))
@@ -229,7 +229,7 @@ def eval_pair(model, pair, params):
     plt.figure(figsize=(2*2, 2*2))
     plt.imshow(images)
 
-    plt.figure(figsize=(2*9, 2*2))
+    plt.figure(figsize=(2*8, 2*2))
     plt.imshow(board)
 
     plt.figure(figsize=(2*4, 2*2))

@@ -35,9 +35,9 @@ class InferenceModel:
         for i in range(4):
             # channel wise slice copied to horizontal slice
             combined_class_mask_pred[:, (OS*i):(OS*(i+1)), :] = \
-                outputs[:, :, :, (nC*0):(nC*(i+1))]
+                outputs[:, :, (nC*i):(nC*(i+1))]
             combined_embedding_pred[:, (OS*i):(OS*(i+1)), :] = \
-                outputs[:, :, :, (nC*4+nD*i):(nC*4+nD*(i+1))]
+                outputs[:, :, (nC*4+nD*i):(nC*4+nD*(i+1))]
         combined_class_mask_pred_int = np.argmax(combined_class_mask_pred, axis = -1)
         cluster_all_class = postprocessing.embedding_to_instance(
             combined_embedding_pred, 
@@ -49,7 +49,7 @@ class InferenceModel:
     def get_mask_pair(self, x):
         # TODO: use masks to track
         OS = self.params.OUTPUT_SIZE
-        _, _, cluster_all_class = self.predict(x)
+        _, _, cluster_all_class = self.segment(x)
         num_instance = np.max(cluster_all_class)
         amodal_prev_masks = []
         amodal_masks = []
