@@ -8,6 +8,8 @@ class MaskTrackEvaluator:
     def __init__(self, iou_threshold):
         self.iou_threshold = iou_threshold
         self.accs = []
+        self.names = []
+        self.seq_id = 0
     
 
     def gen_target_sequence(self, sequence):
@@ -42,15 +44,16 @@ class MaskTrackEvaluator:
                     dist_matrix[j, k] = utils.iou(gt_target.mask, dt_target.mask)
             acc.update(gt_ids, dt_ids, dist_matrix)
         self.accs.append(acc)
+        self.names.append(f'seq_{self.seq_id}')
+        self.seq_id += 1
     
 
     def summarize(self):
-        # TODO: generate overall report
         mh = mm.metrics.create()
         summary = mh.compute_many(
             self.accs, 
             metrics=mm.metrics.motchallenge_metrics, 
-            names=['full', 'part'],
+            names=self.names,
             generate_overall=True
             )
         strsummary = mm.io.render_summary(

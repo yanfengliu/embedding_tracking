@@ -86,11 +86,11 @@ class InferenceModel:
         else:
             prev_frame = self.frames[-1]
             frame = []
-            for target in prev_frame:
+            for i in range(len(masks_0)):
+                mask_0 = masks_0[i]
+                mask_1 = masks_1[i]
                 matched = False
-                for i in range(len(masks_0)):
-                    mask_0 = masks_0[i]
-                    mask_1 = masks_1[i]
+                for target in prev_frame:
                     iou = utils.iou(target.mask, mask_0)
                     if iou > self.params.IOU_THRESHOLD:
                         # mask_0 is already tracked in the previous frame
