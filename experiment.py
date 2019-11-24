@@ -92,6 +92,7 @@ class Experiment:
 
 
     def eval(self, data_loader):
+        print('Evaluating model')
         evaluator = eval.MaskTrackEvaluator(iou_threshold=self.params.IOU_THRESHOLD)
         for _ in range(data_loader.num_seq):
             sequence = data_loader.get_next_sequence()

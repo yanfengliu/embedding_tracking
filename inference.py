@@ -69,15 +69,14 @@ class InferenceModel:
     def update_track(self, x):
         masks_0, masks_1 = self.get_mask_pair(x)
         # step 1: initialize tracks with every mask in the first frame
-        highest_id = -1
         if len(self.frames) == 0:
             frame_0 = []
             frame_1 = []
             for i in range(len(masks_0)):
                 mask_0 = masks_0[i]
                 mask_1 = masks_1[i]
-                id = highest_id + 1
-                highest_id += 1
+                id = self.highest_id + 1
+                self.highest_id += 1
                 frame_0.append(Target(mask_0, id))
                 frame_1.append(Target(mask_1, id))
             self.frames.append(frame_0)
@@ -102,8 +101,8 @@ class InferenceModel:
                 # if there is no match between any previous mask and the
                 # new detection, then start a new track
                 if not matched:
-                    id = highest_id + 1
-                    highest_id += 1
+                    id = self.highest_id + 1
+                    self.highest_id += 1
                     new_target = Target(mask_1, id)
                     frame.append(new_target)
             self.frames.append(frame)
@@ -111,6 +110,7 @@ class InferenceModel:
 
     def track_on_sequence(self, sequence):
         self.frames = []
+        self.highest_id = -1
         for i in range(len(sequence) - 1):
             [prev_image_info, image_info] = sequence[i:i+2]
             x, _ = utils.prep_double_frame(prev_image_info, image_info)
