@@ -69,6 +69,10 @@ class Experiment:
     
 
     def save_model(self):
+        self.model_full_path = os.path.join(
+            self.params.MODEL_SAVE_DIR,
+            f'{self.epoch}.h5'
+        )
         print(f'saving model at {self.model_full_path}')
         self.model.save_weights(self.model_full_path)
     

@@ -57,7 +57,7 @@ class MaskTrackEvaluator:
             self.accs, 
             metrics=metrics_names, 
             names=self.names,
-            generate_overall=True
+            generate_overall=False
             )
         strsummary = mm.io.render_summary(
             summary, 
