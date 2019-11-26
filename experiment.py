@@ -7,6 +7,7 @@ import os
 import time
 
 import keras
+import keras.backend as K
 import motmetrics as mm
 import numpy as np
 from IPython.display import clear_output
@@ -79,10 +80,11 @@ class Experiment:
 
     def visual_val(self):
         clear_output(wait=True)
-        self.elapsed_time = time.time() - self.starting_time
+        self.elapsed_time = int(time.time() - self.starting_time)
         utils.visualize_history(
             self.loss_history, 
-            f'loss, epoch: {self.epoch}, total step: {self.step}, total time: {self.elapsed_time}')
+            f'loss, epoch: {self.epoch}, total step: {self.step}, total time: \
+                {self.elapsed_time}, learning_rate: {self.get_learning_rate()}')
         sequence = self.val_datagen.get_sequence()
         pair = sequence[0:2]
         visual.eval_pair(self.model, pair, self.params)
@@ -128,6 +130,15 @@ class Experiment:
     def test(self):
         strsummary = self.eval(self.test_data_loader)
         self.write_summary(strsummary, 'test')
+    
+
+    def update_learning_rate(self):
+        if self.epoch == int(0.5 * self.params.EPOCHS):
+            K.set_value(self.model.optimizer.lr, 0.1 * self.params.LEARNING_RATE)
+    
+
+    def get_learning_rate(self):
+        return K.get_value(self.model.optimizer.lr)
 
 
     def train_val_save(self):
@@ -136,7 +147,9 @@ class Experiment:
         self.loss_history = []
         for epoch in range(self.latest_saved_epoch, self.params.EPOCHS):
             print(f'Training epoch {epoch+1}/{self.params.EPOCHS}')
+            print(f'Learning rate: {self.get_learning_rate()}')
             self.epoch = epoch
+            self.update_learning_rate()
             for _ in range(self.params.TRAIN_NUM_SEQ):
                 sequence = self.train_data_loader.get_next_sequence()
                 self.train_on_sequence(sequence)
