@@ -5,6 +5,8 @@ import random
 
 import cv2
 import numpy as np
+import torch
+from torch.utils import data
 
 import utils
 from datagen import SequenceDataGenerator
@@ -138,3 +140,26 @@ class SequenceDataLoader():
         with open(pickle_full_path, 'rb') as handle:
             sequence = pickle.load(handle)
         return sequence
+
+
+class FastSequenceDataset(data.Dataset):
+  def __init__(self, dataset_path):
+        self.dataset_path = dataset_path
+        self.seq_list = os.listdir(self.dataset_path)
+        self.num_seq = len(self.seq_list)
+
+  def __len__(self):
+        return self.num_seq * 99
+
+  def __getitem__(self, index):
+        seq_id = index // 99
+        image_id = index % 99
+        seq_name = self.seq_list[seq_id]
+        pickle_full_path = os.path.join(self.dataset_path, seq_name, 'sequence.pickle')
+        with open(pickle_full_path, 'rb') as handle:
+            sequence = pickle.load(handle)
+        [prev_image_info, image_info] = sequence[image_id:image_id+2]
+        x, y = utils.prep_double_frame(prev_image_info, image_info)
+        x = np.squeeze(x)
+        y = np.squeeze(y)
+        return x, y

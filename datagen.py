@@ -101,7 +101,7 @@ class SequenceDataGenerator(ShapeDataGenerator):
         self.Rs = []
         for _ in range(self.num_shape):
             if self.rotate_shapes:
-                angle = random.randint(-30, 30)
+                angle = random.randint(-10, 10)
                 theta = (np.pi / 180.0) * angle
                 R = np.array([[np.cos(theta), -np.sin(theta)],
                             [np.sin(theta), np.cos(theta)]])

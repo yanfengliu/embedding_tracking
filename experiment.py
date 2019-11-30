@@ -11,6 +11,7 @@ import keras.backend as K
 import motmetrics as mm
 import numpy as np
 from IPython.display import clear_output
+from torch.utils import data
 
 import datagen
 import dataset
@@ -36,8 +37,13 @@ class Experiment:
             random_size = True,
             rotate_shapes = True
             )
-        self.train_data_loader = dataset.SequenceDataLoader(
-            dataset_path=self.params.TRAIN_SET_PATH, shuffle=True)
+        # self.train_data_loader = dataset.SequenceDataLoader(
+        #     dataset_path=self.params.TRAIN_SET_PATH, shuffle=True)
+        train_dataset = dataset.FastSequenceDataset(
+            dataset_path=self.params.TRAIN_SET_PATH
+        )
+        self.train_data_loader = data.DataLoader(train_dataset, batch_size=1, 
+            shuffle=True, num_workers=8, pin_memory=True, drop_last=True)
         self.val_data_loader   = dataset.SequenceDataLoader(
             dataset_path=self.params.VAL_SET_PATH,   shuffle=False)
         self.test_data_loader  = dataset.SequenceDataLoader(
@@ -91,16 +97,20 @@ class Experiment:
         visual.eval_pair(self.model, pair, self.params)
     
 
+    def train_on_xy(self, x, y):
+        self.step += 1
+        history = self.model.fit(x, y, batch_size = 1, verbose = False)
+        latest_loss = history.history['loss'][-1]
+        self.loss_history.append(latest_loss)
+        if self.step % self.params.STEPS_PER_VISUAL == 0:
+            self.visual_val()
+
+
     def train_on_sequence(self, sequence):
         for i in range(self.params.SEQUENCE_LEN - 1):
-            self.step += 1
             [prev_image_info, image_info] = sequence[i:i+2]
             x, y = utils.prep_double_frame(prev_image_info, image_info)
-            history = self.model.fit(x, y, batch_size = 1, verbose = False)
-            latest_loss = history.history['loss'][-1]
-            self.loss_history.append(latest_loss)
-            if self.step % self.params.STEPS_PER_VISUAL == 0:
-                self.visual_val()
+            self.train_on_xy(x, y)
 
 
     def eval(self, data_loader):
@@ -154,9 +164,11 @@ class Experiment:
             print(f'Learning rate: {self.get_learning_rate()}')
             self.epoch = epoch
             self.update_learning_rate()
-            for _ in range(self.params.TRAIN_NUM_SEQ):
-                sequence = self.train_data_loader.get_next_sequence()
-                self.train_on_sequence(sequence)
+            # for _ in range(self.params.TRAIN_NUM_SEQ):
+            #     sequence = self.train_data_loader.get_next_sequence()
+            #     self.train_on_sequence(sequence)
+            for x, y in self.train_data_loader:
+                self.train_on_xy(x, y)
             if (epoch + 1) % self.params.EPOCHS_PER_SAVE == 0:
                 self.save_model()
                 self.validate()
