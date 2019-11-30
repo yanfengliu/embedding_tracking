@@ -37,13 +37,13 @@ class Experiment:
             random_size = True,
             rotate_shapes = True
             )
-        # self.train_data_loader = dataset.SequenceDataLoader(
-        #     dataset_path=self.params.TRAIN_SET_PATH, shuffle=True)
-        train_dataset = dataset.FastSequenceDataset(
-            dataset_path=self.params.TRAIN_SET_PATH
-        )
-        self.train_data_loader = data.DataLoader(train_dataset, batch_size=1, 
-            shuffle=True, num_workers=8, pin_memory=True, drop_last=True)
+        # train_dataset = dataset.FastSequenceDataset(
+        #     dataset_path=self.params.TRAIN_SET_PATH
+        # )
+        # self.train_data_loader = data.DataLoader(train_dataset, batch_size=1, 
+        #     shuffle=True, num_workers=8, pin_memory=True, drop_last=True)
+        self.train_data_loader = dataset.SequenceDataLoader(
+            dataset_path=self.params.TRAIN_SET_PATH, shuffle=True)
         self.val_data_loader   = dataset.SequenceDataLoader(
             dataset_path=self.params.VAL_SET_PATH,   shuffle=False)
         self.test_data_loader  = dataset.SequenceDataLoader(
@@ -164,11 +164,11 @@ class Experiment:
             print(f'Learning rate: {self.get_learning_rate()}')
             self.epoch = epoch
             self.update_learning_rate()
-            # for _ in range(self.params.TRAIN_NUM_SEQ):
-            #     sequence = self.train_data_loader.get_next_sequence()
-            #     self.train_on_sequence(sequence)
-            for x, y in self.train_data_loader:
-                self.train_on_xy(x, y)
+            for _ in range(self.params.TRAIN_NUM_SEQ):
+                sequence = self.train_data_loader.get_next_sequence()
+                self.train_on_sequence(sequence)
+            # for x, y in self.train_data_loader:
+            #     self.train_on_xy(x, y)
             if (epoch + 1) % self.params.EPOCHS_PER_SAVE == 0:
                 self.save_model()
                 self.validate()
