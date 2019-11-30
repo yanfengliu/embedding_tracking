@@ -128,6 +128,8 @@ class Experiment:
 
 
     def test(self):
+        if not hasattr(self, 'epoch'):
+            raise AttributeError("There is no attribute 'epoch'")
         strsummary = self.eval(self.test_data_loader)
         self.write_summary(strsummary, 'test')
     

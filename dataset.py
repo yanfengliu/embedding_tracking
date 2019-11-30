@@ -76,62 +76,44 @@ class SequenceDataset():
         pass
 
     
-    def gen_dataset(self, path, num_seq, num_shape, image_size, sequence_len, random_size, seed=0):
+    def gen_dataset(self, params, dataset_type, seed=0):
         random.seed(seed)
         np.random.seed(seed)
+        if dataset_type == 'train':
+            num_seq = params.TRAIN_NUM_SEQ
+            path = params.TRAIN_SET_PATH
+        elif dataset_type == 'val':
+            num_seq = params.VAL_NUM_SEQ
+            path = params.VAL_SET_PATH
+        elif dataset_type == 'test':
+            num_seq = params.TEST_NUM_SEQ
+            path = params.TEST_SET_PATH
+        else:
+            raise ValueError('dataset_type must be train, val, or test')
+
         for i in range(num_seq):
-            sdg = SequenceDataGenerator(num_shape, image_size, sequence_len, random_size)
+            sdg = SequenceDataGenerator(
+                params.NUM_SHAPE, 
+                params.IMG_SIZE, 
+                params.SEQUENCE_LEN, 
+                params.RANDOM_SIZE, 
+                params.ROTATE_SHAPES)
             utils.update_progress(i/num_seq)
             seq = sdg.get_sequence()
-            # assign shape identity based on the classes to avoid collision
-            class_2_shape_ids = {
-                1: list(range(num_shape)),
-                2: list(range(num_shape, 2*num_shape)),
-                3: list(range(2*num_shape, 3*num_shape))
-            }
-            seq_shape_ids = [0] * num_shape
-            info = seq[0]
-            for j in range(len(info['classes'])):
-                class_int = info['classes'][j]
-                shapes_ids_for_class = class_2_shape_ids[class_int]
-                choice_idx = random.randint(0, len(shapes_ids_for_class)-1)
-                seq_shape_ids[j] = shapes_ids_for_class[choice_idx]
-                del(shapes_ids_for_class[choice_idx])
-            # save entire sequence to a single pickle file
             pickle_folder_path = os.path.join(path, f'seq_{i}')
             utils.mkdir_if_missing(pickle_folder_path)
             pickle_full_path = os.path.join(pickle_folder_path, 'sequence.pickle')
-            # with open(pickle_full_path, 'wb') as handle:
-            #     pickle.dump(seq, handle)
+            with open(pickle_full_path, 'wb') as handle:
+                pickle.dump(seq, handle)
             image_count = 0
             for info in seq:
                 image = info['image']
                 image_folder_path   = os.path.join(path, f'seq_{i}', 'images')
-                label_folder_path   = os.path.join(path, f'seq_{i}', 'labels_with_ids')
                 utils.mkdir_if_missing(image_folder_path)
-                utils.mkdir_if_missing(label_folder_path)
                 image_full_path     = os.path.join(image_folder_path, f'{image_count:05d}.png')
-                label_full_path     = os.path.join(label_folder_path, f'{image_count:05d}.txt')
-                # save image
                 image = (image*255).astype(np.uint8)
                 cv2.imwrite(image_full_path, image)
-                # save annotation txt
-                label_txt = open(label_full_path, 'w')
-                # [class] [identity] [x_center] [y_center] [width] [height]
-                for j in range(len(info['classes'])):
-                    # class_int = info['classes'][j]
-                    class_int = 0
-                    # for "towards real-time MOT" identity is from 0 to num_identities-1
-                    # identity = j + num_unique_identities
-                    identity = seq_shape_ids[j]
-                    x_center, y_center, width, height = info['bboxes'][j]
-                    ann = f'{class_int} {identity} {x_center} {y_center} {width} {height}\n'
-                    label_txt.write(ann)
-                label_txt.close() 
                 image_count += 1
-            # increment the total number of unique identities because they should not
-            # be mixed up between sequences
-            # num_unique_identities += num_shape
 
 
 class SequenceDataLoader():

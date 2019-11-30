@@ -1,9 +1,10 @@
+import random
+
 import numpy as np
 from PIL import Image
 
 import shapes
 import utils
-
 
 min_dist = 0
 max_dist = 1
@@ -40,7 +41,7 @@ class ImageDataGenerator(ShapeDataGenerator):
 
 
 class SequenceDataGenerator(ShapeDataGenerator):
-    def __init__(self, num_shape, image_size, sequence_len, random_size=False):
+    def __init__(self, num_shape, image_size, sequence_len, random_size=False, rotate_shapes=False):
         if random_size:
             shape_sizes = np.random.rand(num_shape) * 0.2 + 0.8
         else:
@@ -49,6 +50,7 @@ class SequenceDataGenerator(ShapeDataGenerator):
         ShapeDataGenerator.__init__(self, num_shape, image_size, shape_sizes)
         self.sequence_len = sequence_len
         self.shapes = None
+        self.rotate_shapes = rotate_shapes
 
     def get_velocities(self):
         velocities = np.random.randint(
@@ -93,8 +95,33 @@ class SequenceDataGenerator(ShapeDataGenerator):
                     y_max > max_dist * self.image_size and dy > 0):
                     dy = -dy
             self.shapes[i]['velocity'] = [dx, dy]
-
     
+
+    def get_rotation_velocity(self):
+        self.Rs = []
+        for _ in range(self.num_shape):
+            if self.rotate_shapes:
+                angle = random.randint(-30, 30)
+                theta = (np.pi / 180.0) * angle
+                R = np.array([[np.cos(theta), -np.sin(theta)],
+                            [np.sin(theta), np.cos(theta)]])
+            else:
+                R = np.array([[1, 0], [0, 1]])
+            self.Rs.append(R)
+
+
+    def rotate(self):
+        for i in range(self.num_shape):
+            shape_info = self.shapes[i]
+            if shape_info['type'] != 'round':
+                R = self.Rs[i]
+                offset = shape_info['offset']
+                corners = shape_info['corners']
+                corners = corners - offset
+                corners = np.dot(corners, R) + offset
+                shape_info['corners'] = corners
+
+
     def render_flow(self):
         flow = shapes.get_flow_from_shapes(self.shapes, self.image_size)
         return flow
@@ -104,8 +131,10 @@ class SequenceDataGenerator(ShapeDataGenerator):
         sequence = []
         self.init_shapes()
         self.get_velocities()
+        self.get_rotation_velocity()
         for _ in range(self.sequence_len):
             self.move()
+            self.rotate()
             image_info = self.render_frame()
             flow = self.render_flow()
             image_info['optical_flow'] = flow.astype(np.float32)
