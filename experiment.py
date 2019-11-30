@@ -133,6 +133,7 @@ class Experiment:
     
 
     def update_learning_rate(self):
+        # only update once when 50% training is complete
         if self.epoch == int(0.5 * self.params.EPOCHS):
             K.set_value(self.model.optimizer.lr, 0.1 * self.params.LEARNING_RATE)
     

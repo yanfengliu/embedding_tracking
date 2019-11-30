@@ -10,12 +10,23 @@ import utils
 from datagen import SequenceDataGenerator
 
 
+def get_test_videos(params):
+    shapes_dir = os.path.join('dataset2', f'{params.NUM_SHAPE}_shapes')
+    for i in range(params.TEST_NUM_SEQ):
+        print(f'Making video for seq_{i} out of {params.TEST_NUM_SEQ}')
+        image_path = f'{shapes_dir}/test/seq_{i}/images'
+        video_path = f'{shapes_dir}/test/seq_{i}/video'
+        utils.mkdir_if_missing(video_path)
+        video_full_path = os.path.join(video_path, 'video.avi')
+        utils.images_to_video(image_path, video_full_path, 5, (256, 256))
+
+
 def fill_image_list(params):
     r"""
     Generate *.train and *.test file for training protocol of 
     "Towards-Realtime-MOT"
     """
-    shapes_dir = os.path.join('dataset', f'{params.NUM_SHAPE}_shapes')
+    shapes_dir = os.path.join('dataset2', f'{params.NUM_SHAPE}_shapes')
     for i in range(params.TRAIN_NUM_SEQ):
         train_image_list_path = os.path.join(shapes_dir, f'seq_{i}.train')
         f = open(train_image_list_path, 'w')
@@ -39,7 +50,7 @@ def gen_ccmcpe(params):
     """
     ccmcpe = dict()
     
-    dataset_dir = os.path.join(params.GITHUB_DIR, 'embedding_tracking', 'dataset')
+    dataset_dir = os.path.join(params.GITHUB_DIR, 'embedding_tracking', 'dataset2')
     ccmcpe['root'] = os.path.join(dataset_dir, f'{params.NUM_SHAPE}_shapes')
     # list train sets
     train_seq_dict = dict()
@@ -68,17 +79,30 @@ class SequenceDataset():
     def gen_dataset(self, path, num_seq, num_shape, image_size, sequence_len, random_size, seed=0):
         random.seed(seed)
         np.random.seed(seed)
-        num_unique_identities = 0
         for i in range(num_seq):
             sdg = SequenceDataGenerator(num_shape, image_size, sequence_len, random_size)
             utils.update_progress(i/num_seq)
             seq = sdg.get_sequence()
+            # assign shape identity based on the classes to avoid collision
+            class_2_shape_ids = {
+                1: list(range(num_shape)),
+                2: list(range(num_shape, 2*num_shape)),
+                3: list(range(2*num_shape, 3*num_shape))
+            }
+            seq_shape_ids = [0] * num_shape
+            info = seq[0]
+            for j in range(len(info['classes'])):
+                class_int = info['classes'][j]
+                shapes_ids_for_class = class_2_shape_ids[class_int]
+                choice_idx = random.randint(0, len(shapes_ids_for_class)-1)
+                seq_shape_ids[j] = shapes_ids_for_class[choice_idx]
+                del(shapes_ids_for_class[choice_idx])
             # save entire sequence to a single pickle file
             pickle_folder_path = os.path.join(path, f'seq_{i}')
             utils.mkdir_if_missing(pickle_folder_path)
             pickle_full_path = os.path.join(pickle_folder_path, 'sequence.pickle')
-            with open(pickle_full_path, 'wb') as handle:
-                pickle.dump(seq, handle)
+            # with open(pickle_full_path, 'wb') as handle:
+            #     pickle.dump(seq, handle)
             image_count = 0
             for info in seq:
                 image = info['image']
@@ -98,7 +122,8 @@ class SequenceDataset():
                     # class_int = info['classes'][j]
                     class_int = 0
                     # for "towards real-time MOT" identity is from 0 to num_identities-1
-                    identity = j + num_unique_identities
+                    # identity = j + num_unique_identities
+                    identity = seq_shape_ids[j]
                     x_center, y_center, width, height = info['bboxes'][j]
                     ann = f'{class_int} {identity} {x_center} {y_center} {width} {height}\n'
                     label_txt.write(ann)
@@ -106,7 +131,7 @@ class SequenceDataset():
                 image_count += 1
             # increment the total number of unique identities because they should not
             # be mixed up between sequences
-            num_unique_identities += num_shape
+            # num_unique_identities += num_shape
 
 
 class SequenceDataLoader():

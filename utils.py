@@ -189,3 +189,14 @@ def iou(mask1, mask2):
     i = intersection(mask1, mask2)
     u = union(mask1, mask2)
     return i / u
+
+
+def images_to_video(image_path, video_path, fps, dimensions):
+    image_list = os.listdir(image_path)
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter(video_path, fourcc, fps, dimensions)
+    for image_name in image_list:
+        image_full_path = os.path.join(image_path, image_name)
+        image = cv2.imread(image_full_path)
+        out.write(image)
+    out.release()

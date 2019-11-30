@@ -41,7 +41,7 @@ class MaskTrackEvaluator:
                 for k in range(num_dt):
                     gt_target = gt_frame[j]
                     dt_target = dt_frame[k]
-                    dist_matrix[j, k] = utils.iou(gt_target.mask, dt_target.mask)
+                    dist_matrix[j, k] = 1 - utils.iou(gt_target.mask, dt_target.mask)
             acc.update(gt_ids, dt_ids, dist_matrix)
         self.accs.append(acc)
         self.names.append(f'seq_{self.seq_id}')
