@@ -33,7 +33,8 @@ class Experiment:
             num_shape = self.params.NUM_SHAPE,
             image_size = self.params.IMG_SIZE,
             sequence_len = self.params.SEQUENCE_LEN,
-            random_size = True
+            random_size = True,
+            rotate_shapes = True
             )
         self.train_data_loader = dataset.SequenceDataLoader(
             dataset_path=self.params.TRAIN_SET_PATH, shuffle=True)
