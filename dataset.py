@@ -9,7 +9,7 @@ import torch
 from torch.utils import data
 
 import utils
-from datagen import SequenceDataGenerator
+from datagen import ImageDataGenerator, SequenceDataGenerator
 
 
 def get_test_videos(params):
@@ -140,6 +140,22 @@ class SequenceDataLoader():
         with open(pickle_full_path, 'rb') as handle:
             sequence = pickle.load(handle)
         return sequence
+
+
+class FastImageDataset(data.Dataset):
+  def __init__(self, params):
+        self.params = params
+
+  def __len__(self):
+        return self.params.STEPS
+
+  def __getitem__(self, index):
+        generator = ImageDataGenerator(self.params.NUM_SHAPE, self.params.IMG_SIZE)
+        image_info = generator.get_image()
+        x, y = utils.prep_single_frame(image_info)
+        x = np.squeeze(x)
+        y = np.squeeze(y)
+        return x, y
 
 
 class FastSequenceDataset(data.Dataset):

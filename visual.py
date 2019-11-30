@@ -168,7 +168,7 @@ def single_eval(model, x, y, params):
     class_mask_pred = outputs[0, :, :, :class_num]
     embedding_pred  = outputs[0, :, :, class_num:(class_num + embedding_dim)]
     class_mask_int_pred = np.argmax(class_mask_pred, axis=-1)
-    cluster_all_class = embedding_to_instance(embedding_pred, class_mask_pred, params)
+    cluster_all_class = embedding_to_instance(embedding_pred, class_mask_int_pred, params)
     image = np.squeeze(x)
     class_mask_gt    = y[0, ..., 0]
     instance_mask_gt = y[0, ..., 1]
