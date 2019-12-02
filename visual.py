@@ -1,12 +1,15 @@
+import time
+
 import cv2
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from postprocessing import embedding_to_instance
+
 import inference
 import utils
-import matplotlib
+from postprocessing import embedding_to_instance
 
 
 def principal_component_analysis(embedding_pred, embedding_dim):
@@ -226,13 +229,24 @@ def eval_pair(model, pair, params):
     board[OS:, (OS * 4):(OS * 8), :] = combined_class_mask_pred_color
 
     # show visulizations
-    plt.figure(figsize=(2*2, 2*2))
-    plt.imshow(images)
+    # plt.figure(figsize=(4*2, 4*2))
+    # plt.imshow(images)
 
-    plt.figure(figsize=(2*8, 2*2))
-    plt.imshow(board)
+    # plt.figure(figsize=(2*8, 2*2))
+    # plt.imshow(board)
 
-    plt.figure(figsize=(2*4, 2*2))
-    plt.imshow(emb_masked)
+    # plt.figure(figsize=(2*4, 2*2))
+    # plt.imshow(emb_masked)
+
+    images = images.astype(np.float32)
+    images = utils.normalize(images)
+    img_masked_emb = np.zeros((image_size, image_size * 10, 3))
+    img_masked_emb[:, :2*image_size, :] = images
+    emb_masked = utils.resize_img(emb_masked, image_size, image_size * 4)
+    combined_id_mask_pred_color = utils.resize_img(combined_id_mask_pred_color, image_size, image_size * 4)
+    img_masked_emb[:, 2*image_size:6*image_size, :] = emb_masked
+    img_masked_emb[:, 6*image_size:10*image_size, :] = combined_id_mask_pred_color
+    plt.figure(figsize=(4*10, 4*2))
+    plt.imshow(img_masked_emb)
 
     plt.show()

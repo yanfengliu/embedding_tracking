@@ -35,7 +35,7 @@ class Experiment:
             image_size = self.params.IMG_SIZE,
             sequence_len = self.params.SEQUENCE_LEN,
             random_size = True,
-            rotate_shapes = True
+            rotate_shapes = self.params.ROTATE_SHAPES
             )
         # train_dataset = dataset.FastSequenceDataset(
         #     dataset_path=self.params.TRAIN_SET_PATH

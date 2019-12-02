@@ -23,7 +23,7 @@ def resize_img(img, width, height):
 
 def prep_image(image_info):
     x = image_info['image']
-    x = x.astype(np.float32)
+    # x = x.astype(np.float32)
     x = x * 2 - 1
     x = x[np.newaxis, ...]
     return x
