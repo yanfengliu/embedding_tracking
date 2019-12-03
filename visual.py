@@ -12,16 +12,42 @@ import utils
 from postprocessing import embedding_to_instance
 
 
-def principal_component_analysis(embedding_pred, embedding_dim):
-    width, height, _ = embedding_pred.shape
-    embedding_pred_flat = np.reshape(embedding_pred, (-1, embedding_dim))
-    embedding_pred_flat = StandardScaler().fit_transform(embedding_pred_flat)
-    pca = PCA(n_components=3)
-    pc_flat = pca.fit_transform(embedding_pred_flat)
-    pc = np.reshape(pc_flat, (width, height, 3))
-    pc = utils.normalize(pc)
+class PCAViz:
+    def __init__(self, verbose:bool=False):
+        self.verbose = verbose
+        self.PCs = None
+        self.e_mu = None
+        self.e_std = None
 
-    return pc
+
+    def recalculate(self, e_flat:np.array):
+        cm = np.cov( np.transpose(e_flat) )
+        evals, evects = np.linalg.eig( cm )
+        order = np.argsort(evals)[::-1]
+        evals = evals[order]
+        evects = evects[:, order]       
+        return evects
+
+
+    def feed(self, e_flat, mask_flat, out_dims='all', show:bool=False):
+        dim = e_flat.shape[0]
+        e_flat_original = np.zeros((dim, out_dims))
+        idx = mask_flat == 1
+        e_flat = e_flat[idx]
+        if self.PCs is None:
+            if self.verbose:
+                print('Reclaculating')
+            self.PCs = self.recalculate(e_flat)
+            self.e_mu = np.mean( e_flat,0 )
+            self.e_std = np.std( e_flat,0 )
+        if out_dims is 'all':
+            out_dims = self.PCs.shape[0]
+        scores_flat = np.matmul( (e_flat-self.e_mu)/self.e_std , self.PCs)
+        scores_flat = scores_flat[:, :out_dims]
+        mask_flat = np.expand_dims(mask_flat, axis=-1)
+        scores_flat = utils.normalize(scores_flat)
+        e_flat_original[idx] = scores_flat
+        return e_flat_original
 
 
 def flow_to_rgb(flow):
@@ -49,13 +75,11 @@ def flow_to_rgb(flow):
 
 
 def imgs_to_video(images, video_name, fps):
-    # assumes `images` contains square images in shape of (x, x, 3)
     height, width = images[0].shape[0:2]
     video = cv2.VideoWriter(video_name, 0, fps, (width, height))
     for image in images:
         video.write(image)
     video.release()
-    return
 
 
 def flows_to_video(flows, video_name, fps):
@@ -74,6 +98,17 @@ def float_to_uint8(data):
     data = data * 255
     data = data.astype(np.uint8)
     return data
+
+
+def principal_component_analysis(embedding_pred, embedding_dim):
+    width, height, _ = embedding_pred.shape
+    embedding_pred_flat = np.reshape(embedding_pred, (-1, embedding_dim))
+    embedding_pred_flat = StandardScaler().fit_transform(embedding_pred_flat)
+    pca = PCA(n_components=3)
+    pc_flat = pca.fit_transform(embedding_pred_flat)
+    pc = np.reshape(pc_flat, (width, height, 3))
+    pc = utils.normalize(pc)
+    return pc
 
 
 def pair_embedding_to_video(sequence, model, params, video_name, fps):
