@@ -264,14 +264,17 @@ def eval_pair(model, pair, params):
     board[OS:, (OS * 4):(OS * 8), :] = combined_class_mask_pred_color
 
     # show visulizations
-    # plt.figure(figsize=(4*2, 4*2))
-    # plt.imshow(images)
+    plt.figure(figsize=(4*2, 4*2))
+    plt.imshow(images)
 
-    # plt.figure(figsize=(2*8, 2*2))
-    # plt.imshow(board)
+    plt.figure(figsize=(2*8, 2*2))
+    plt.imshow(board)
 
-    # plt.figure(figsize=(2*4, 2*2))
-    # plt.imshow(emb_masked)
+    plt.figure(figsize=(2*4, 2*2))
+    plt.imshow(emb_masked)
+
+    plt.figure(figsize=(2*4, 2*2))
+    plt.imshow(pc)
 
     images = images.astype(np.float32)
     images = utils.normalize(images)
