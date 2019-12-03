@@ -273,18 +273,18 @@ def eval_pair(model, pair, params):
     plt.figure(figsize=(2*4, 2*2))
     plt.imshow(emb_masked)
 
-    plt.figure(figsize=(2*4, 2*2))
-    plt.imshow(pc)
+    # plt.figure(figsize=(2*4, 2*2))
+    # plt.imshow(pc)
 
-    images = images.astype(np.float32)
-    images = utils.normalize(images)
-    img_masked_emb = np.zeros((image_size, image_size * 10, 3))
-    img_masked_emb[:, :2*image_size, :] = images
-    emb_masked = utils.resize_img(emb_masked, image_size, image_size * 4)
-    combined_id_mask_pred_color = utils.resize_img(combined_id_mask_pred_color, image_size, image_size * 4)
-    img_masked_emb[:, 2*image_size:6*image_size, :] = emb_masked
-    img_masked_emb[:, 6*image_size:10*image_size, :] = combined_id_mask_pred_color
-    plt.figure(figsize=(4*10, 4*2))
-    plt.imshow(img_masked_emb)
+    # images = images.astype(np.float32)
+    # images = utils.normalize(images)
+    # img_masked_emb = np.zeros((image_size, image_size * 10, 3))
+    # img_masked_emb[:, :2*image_size, :] = images
+    # emb_masked = utils.resize_img(emb_masked, image_size, image_size * 4)
+    # combined_id_mask_pred_color = utils.resize_img(combined_id_mask_pred_color, image_size, image_size * 4)
+    # img_masked_emb[:, 2*image_size:6*image_size, :] = emb_masked
+    # img_masked_emb[:, 6*image_size:10*image_size, :] = combined_id_mask_pred_color
+    # plt.figure(figsize=(4*10, 4*2))
+    # plt.imshow(img_masked_emb)
 
     plt.show()
