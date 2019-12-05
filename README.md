@@ -1,5 +1,23 @@
-# Simultaneous Amodal Instance Segmentation and Pixel-Level Multi-Object Tracking through Layered Deep Pixel Embeddings
+# Amodal Instance Segmentation and Multi-Object Tracking with Deep Pixel Embeddings
 
 This repo contains official source code that implements my Master's thesis work. 
 
-The idea is to use pair of frames from a video as input and produce complete masks for every object in an image, including both its visible and invisible parts (amodal segmentation). Then track these objects by predicting their masks in the next frame. This is in contrast with the common approach towards MOT (Multi-Object Tracking) where objects are only described by bounding boxes. Multi-class MOT is also addressed in this work, in contrast with the more commonly researched single-class MOT. Common datasets usually only contain pedestrian annotations. This lack of data is a major factor that prohibits multi-class MOT. This project bypasses the contraints by using synthetic data. 
+### Abstract
+
+This thesis extends upon the representational output of semantic instance segmentation by explicitly including both visible and occluded parts. A fully convolutional network is trained to produce consistent pixel-level embedding across two layers such that, when clustered, the results convey the full spatial extent and depth ordering of each instance. Results demonstrate that the network can accurately estimate complete masks in the presence of occlusion and outperform leading top-down bounding-box approaches. 
+
+The model is further extended to produce consistent pixel-level embeddings across two consecutive image frames from a video to simultaneously perform amodal instance segmentation and multi-object tracking. No post-processing motion modelling, identity matching, or Hungarian Algorithm is needed to perform multi-object tracking. The advantages and disadvantages of such a bounding-box-free approach are studied thoroughly. Experiments show that the proposed method outperforms the state-of-the-art bounding-box based approach on our simple yet challenging synthetic tracking dataset. 
+
+### Key Illustrations
+
+**Model architecture for simultaneous amodal instance segmentation and multi-class multi-object tracking**
+
+![](https://i.imgur.com/aXiP8CE.png)
+
+**Key Frame Identity linking**
+
+![](https://i.imgur.com/5Nox1aR.png)
+
+**Sample tracking results**
+
+![](https://i.imgur.com/bXK0QO0.png)
