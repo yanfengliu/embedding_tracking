@@ -1,6 +1,6 @@
 # Amodal Instance Segmentation and Multi-Object Tracking with Deep Pixel Embeddings
 
-This repo contains official source code that implements my Master's thesis work. 
+This repo contains official source code that implements my [Master's thesis work](https://digitalcommons.unl.edu/elecengtheses/111/). 
 
 ### Abstract
 
